@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>英语语音测试</title>
+<title>英语语音测试 v2</title>
 <style>
   :root { color-scheme: dark light; }
   * { box-sizing: border-box; }
@@ -24,238 +24,189 @@
   b { color: #ffd479; }
   button {
     display: block; width: 100%; padding: 15px 14px; margin: 0 0 10px;
-    font-size: 17px; font-family: inherit; font-weight: 600;
+    font-size: 16px; font-family: inherit; font-weight: 600;
     color: #0d1117; background: #6fb1ff; border: 0; border-radius: 10px;
+    text-align: left;
   }
   button:disabled { background: #3a465c; color: #8b97ab; }
-  button.sec { background: #2b3446; color: #cfd9ea; }
+  button.sec { background: #2b3446; color: #cfd9ea; text-align: center; }
+  button.done { background: #4ec97f; }
   pre {
     margin: 0; padding: 10px; border-radius: 8px; background: #0d1117;
     border: 1px solid #1e2532; color: #a9e6a0; font-size: 13px; line-height: 1.5;
     white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Menlo, monospace;
     min-height: 20px;
   }
-  .warn {
-    background: #3a2415; border-color: #7a4a1c; color: #ffcf9a;
-    font-size: 15px; padding: 14px; border-radius: 12px; margin-bottom: 14px;
-  }
-  audio { width: 100%; margin: 0 0 10px; }
 </style>
 </head>
 <body>
 
-<h1>英语语音测试</h1>
-<p class="hint">只做一件事：确认你的 iPhone 能不能用浏览器听懂你说的英语。按顺序点，大概 2 分钟。</p>
-
-<div id="wechatWarn" class="warn" hidden>
-  ⚠️ 你现在是在<strong>微信里</strong>打开这个页面。微信浏览器不支持网页语音识别。<br>
-  请点右上角「…」→「在 Safari 中打开」，再重新测一遍。
-</div>
+<h1>英语语音测试 v2</h1>
+<p class="hint">上一版在 iPhone 上抓到了正确的中间结果（置信度 0.98），但会话中途报 aborted。这一版专门找出哪一组配置能跑完整。</p>
 
 <section>
-  <h2>1 · 环境</h2>
-  <pre id="env">检测中…</pre>
+  <h2>怎么测</h2>
+  <p>下面 4 个按钮，<b>每个点一次</b>。每次点完等大约 1 秒，再说同一句话：</p>
+  <p><b>I would like a large coffee, please.</b></p>
+  <p>说完就停，别再操作，让它自己结束（最多 12 秒）。某组报错也没关系，接着试下一组。</p>
 </section>
 
 <section>
-  <h2>2 · 能不能把英语读给你听</h2>
-  <p>点按钮，看 iPhone 有没有念出这句话。</p>
-  <button id="ttsBtn">播放：I would like a large coffee, please.</button>
-  <pre id="ttsLog">—</pre>
+  <h2>配置测试</h2>
+  <button data-cfg="A">A · 不连续 + 要中间结果　（复现上一版）</button>
+  <button data-cfg="B">B · 连续 + 要中间结果</button>
+  <button data-cfg="C">C · 不连续 + 只要最终结果</button>
+  <button data-cfg="D">D · 连续 + 只要最终结果</button>
+  <button id="stopBtn" class="sec">手动停止当前识别</button>
+  <pre id="log">等待测试…</pre>
 </section>
 
 <section>
-  <h2>3 · 能不能录音</h2>
-  <p>点按钮会弹出麦克风授权，授权后录 3 秒，然后可以回放。</p>
-  <button id="recBtn">录 3 秒</button>
-  <audio id="recPlay" controls hidden></audio>
-  <pre id="recLog">—</pre>
-</section>
-
-<section>
-  <h2>4 · 能不能听懂你说的英语（关键）</h2>
-  <p>点「开始识别」，等出现提示后，正常语速说：<br><b>I would like a large coffee, please.</b></p>
-  <button id="asrBtn">开始识别</button>
-  <pre id="asrLog">—</pre>
-</section>
-
-<section>
-  <h2>5 · 报告</h2>
-  <p>点下面按钮复制，然后粘贴发我。</p>
-  <button id="copyBtn">复制报告</button>
+  <h2>报告</h2>
+  <p>四组都试完后，点下面的按钮复制，发我。</p>
+  <button id="copyBtn" class="sec">复制报告</button>
   <pre id="report">—</pre>
 </section>
 
 <script>
 'use strict';
 
-const R = { env: {}, tts: '未测', rec: '未测', asr: '未测', asrRaw: [], errors: [] };
+const R = { env: {}, runs: {}, errors: [] };
 const $ = (id) => document.getElementById(id);
-
-/* ---------- 1. 环境 ---------- */
-const ua = navigator.userAgent;
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-function detectEnv() {
-  const ios = (ua.match(/OS (\d+)[._](\d+)/) || []).slice(1).join('.');
-  R.env = {
-    浏览器: ua,
-    页面地址: location.protocol + '//' + location.host,
-    安全上下文: String(window.isSecureContext),
-    微信内置: /MicroMessenger/i.test(ua) ? '是' : '否',
-    iOS版本: ios || '未知',
-    独立模式: String(window.navigator.standalone === true),
-    语音识别API: SR ? '有' : '没有',
-    录音API: navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '有' : '没有',
-    MediaRecorder: window.MediaRecorder ? '有' : '没有',
-    录音格式mp4: window.MediaRecorder && MediaRecorder.isTypeSupported ? String(MediaRecorder.isTypeSupported('audio/mp4')) : '未知',
-    语音合成API: window.speechSynthesis ? '有' : '没有',
-    已装音色数: window.speechSynthesis ? String(window.speechSynthesis.getVoices().length) : '0'
-  };
-  if (/MicroMessenger/i.test(ua)) $('wechatWarn').hidden = false;
-  $('env').textContent = Object.entries(R.env).map(([k, v]) => k + '：' + v).join('\n');
+const CONFIGS = {
+  A: { continuous: false, interimResults: true,  label: '不连续+中间结果' },
+  B: { continuous: true,  interimResults: true,  label: '连续+中间结果' },
+  C: { continuous: false, interimResults: false, label: '不连续+只最终' },
+  D: { continuous: true,  interimResults: false, label: '连续+只最终' }
+};
+
+const ua = navigator.userAgent;
+R.env = {
+  浏览器: ua,
+  安全上下文: String(window.isSecureContext),
+  微信内置: /MicroMessenger/i.test(ua) ? '是' : '否',
+  语音识别API: SR ? '有' : '没有',
+  iOS版本: (ua.match(/OS (\d+)[._](\d+)/) || []).slice(1).join('.') || '未知'
+};
+
+let active = null;
+let capTimer = null;
+
+function log(text) { $('log').textContent = text; }
+
+function finish(cfg, run, reason) {
+  if (run.done) return;
+  run.done = true;
+  run.reason = reason;
+  run.ms = Math.round(performance.now() - run.t0);
+  clearTimeout(capTimer);
+  active = null;
+  const btn = document.querySelector('button[data-cfg="' + cfg + '"]');
+  if (btn) { btn.disabled = false; btn.classList.add('done'); }
+  R.runs[cfg] = run;
+  log('配置 ' + cfg + ' 结束\n' +
+      '触发结束的原因：' + reason + '\n' +
+      '用时：' + run.ms + 'ms\n' +
+      '中间结果：' + (run.interim.join(' / ') || '无') + '\n' +
+      '最终结果：' + (run.final.join(' / ') || '无') + '\n' +
+      '错误：' + (run.errors.join(', ') || '无'));
 }
 
-/* ---------- 2. 语音合成 ---------- */
-$('ttsBtn').onclick = () => {
-  const line = 'I would like a large coffee, please.';
-  if (!window.speechSynthesis) { R.tts = '不支持'; $('ttsLog').textContent = '不支持语音合成'; return; }
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(line);
-    u.lang = 'en-US';
-    u.rate = 0.9;
-    const v = window.speechSynthesis.getVoices().find((x) => /en[-_]US/i.test(x.lang));
-    if (v) u.voice = v;
-    u.onstart = () => { $('ttsLog').textContent = '开始播放…'; };
-    u.onend = () => { R.tts = '有声音（已播完）'; $('ttsLog').textContent = '播放结束。听到声音了吗？'; };
-    u.onerror = (e) => { R.tts = '报错:' + e.error; R.errors.push('tts:' + e.error); $('ttsLog').textContent = '报错：' + e.error; };
-    window.speechSynthesis.speak(u);
-    R.tts = '已触发播放';
-  } catch (e) { R.tts = '异常:' + e.message; $('ttsLog').textContent = '异常：' + e.message; }
-};
+function runConfig(cfg) {
+  if (!SR) { log('这个浏览器没有语音识别接口'); return; }
+  if (active) { log('上一组还没结束，等一下再点'); return; }
 
-/* ---------- 3. 录音 ---------- */
-$('recBtn').onclick = async () => {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    R.rec = '无 getUserMedia'; $('recLog').textContent = '这个浏览器没有录音接口';
+  const c = CONFIGS[cfg];
+  const btn = document.querySelector('button[data-cfg="' + cfg + '"]');
+  btn.disabled = true;
+  const state = { cfg: cfg, label: c.label, t0: performance.now(), interim: [], final: [], errors: [], done: false, reason: '', ms: 0 };
+  active = state;
+
+  let rec;
+  try {
+    rec = new SR();
+  } catch (e) {
+    state.errors.push('构造异常:' + e.message);
+    finish(cfg, state, '构造失败');
     return;
   }
-  $('recBtn').disabled = true;
-  const t0 = performance.now();
-  try {
-    $('recLog').textContent = '等待麦克风授权…';
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const cost = Math.round(performance.now() - t0);
-    if (!window.MediaRecorder) {
-      stream.getTracks().forEach((t) => t.stop());
-      R.rec = '授权成功，但无 MediaRecorder（授权耗时 ' + cost + 'ms）';
-      $('recLog').textContent = R.rec;
-      return;
+  state.rec = rec;
+
+  rec.lang = 'en-US';
+  rec.continuous = c.continuous;
+  rec.interimResults = c.interimResults;
+  rec.maxAlternatives = 1;
+
+  rec.onstart = () => { log('🎤 配置 ' + cfg + '：开始识别，请说：I would like a large coffee, please.'); };
+  rec.onspeechstart = () => { log('听到声音了，继续说…'); };
+  rec.onspeechend = () => { log('检测到你停下了，等结果…'); };
+  rec.onaudiostart = () => { state.audioStart = Math.round(performance.now() - state.t0); };
+  rec.onsoundstart = () => { state.soundStart = Math.round(performance.now() - state.t0); };
+
+  rec.onresult = (e) => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      const text = r[0].transcript.trim();
+      const conf = r[0].confidence ? r[0].confidence.toFixed(2) : '无';
+      if (r.isFinal) { state.final.push(text + '(置信度 ' + conf + ')'); }
+      else { state.interim.push(text + '(置信度 ' + conf + ')'); }
     }
-    const mime = ['audio/mp4', 'audio/webm', 'audio/webm;codecs=opus'].find(
-      (m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)
-    );
-    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    const chunks = [];
-    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-    mr.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
-      const blob = new Blob(chunks, { type: mr.mimeType || 'audio/mp4' });
-      const url = URL.createObjectURL(blob);
-      const a = $('recPlay');
-      a.src = url; a.hidden = false;
-      R.rec = '成功：授权耗时 ' + cost + 'ms，格式 ' + (mr.mimeType || '?') + '，大小 ' + blob.size + ' 字节';
-      $('recLog').textContent = R.rec + '\n点上面播放键回放，听到自己的声音就没问题。';
-      $('recBtn').disabled = false;
-    };
-    mr.start();
-    $('recLog').textContent = '录音中…（3 秒） 授权耗时 ' + cost + 'ms';
-    setTimeout(() => { try { mr.stop(); } catch (e) {} }, 3000);
-  } catch (e) {
-    R.rec = '失败:' + e.name + ' ' + e.message;
-    R.errors.push('rec:' + e.name);
-    $('recLog').textContent = '失败：' + e.name + '\n' + e.message + '\n（若提示权限，请到 设置 → Safari → 麦克风 里允许）';
-    $('recBtn').disabled = false;
-  }
-};
+    log('配置 ' + cfg + ' 进行中…\n中间：' + (state.interim.slice(-1)[0] || '无'));
+  };
 
-/* ---------- 4. 语音识别 ---------- */
-let recog = null;
-$('asrBtn').onclick = () => {
-  if (!SR) {
-    R.asr = '不支持（无 SpeechRecognition API）';
-    $('asrLog').textContent = '这个浏览器没有语音识别接口。\n如果你在微信里打开的，请改用 Safari。';
-    return;
-  }
-  $('asrBtn').disabled = true;
-  let t0 = performance.now();
-  let got = false;
+  rec.onerror = (e) => {
+    state.errors.push(e.error);
+    R.errors.push(cfg + ':' + e.error);
+  };
+
+  rec.onend = () => { finish(cfg, state, 'onend（引擎自己结束）'); };
+
+  capTimer = setTimeout(() => {
+    if (active === state && !state.done) {
+      try { rec.stop(); } catch (err) { finish(cfg, state, 'auto-stop 且 stop() 抛错:' + err.name); }
+    }
+  }, 12000);
+
   try {
-    recog = new SR();
-    recog.lang = 'en-US';
-    recog.continuous = false;
-    recog.interimResults = true;
-    recog.maxAlternatives = 3;
-
-    recog.onstart = () => { t0 = performance.now(); $('asrLog').textContent = '🎤 请现在说：I would like a large coffee, please.'; };
-    recog.onspeechstart = () => { $('asrLog').textContent = '听到你在说了…'; };
-    recog.onresult = (e) => {
-      got = true;
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) {
-          const alts = [];
-          for (let j = 0; j < r.length; j++) alts.push(r[j].transcript + '(置信度 ' + (r[j].confidence ? r[j].confidence.toFixed(2) : '无') + ')');
-          R.asrRaw.push({ final: true, alts: alts });
-        } else {
-          interim += r[0].transcript;
-        }
-      }
-      $('asrLog').textContent = '识别中…\n' + interim;
-    };
-    recog.onerror = (e) => {
-      R.asr = '报错:' + e.error;
-      R.errors.push('asr:' + e.error);
-      $('asrLog').textContent = '报错：' + e.error + (e.message ? '\n' + e.message : '') +
-        '\n（not-allowed = 没授权；service-not-allowed = 系统禁用了听写；audio-capture = 麦克风被占用）';
-    };
-    recog.onend = () => {
-      const ms = Math.round(performance.now() - t0);
-      $('asrBtn').disabled = false;
-      if (got) {
-        const finals = R.asrRaw.filter((x) => x.final).map((x) => x.alts[0]).join(' | ');
-        R.asr = '成功（' + ms + 'ms）：' + finals;
-        $('asrLog').textContent = '✅ 识别成功，用时 ' + ms + 'ms\n说你的是：\n' + finals;
-      } else if (!R.asr.startsWith('报错')) {
-        R.asr = '结束但没识别到内容（' + ms + 'ms）';
-        $('asrLog').textContent = '识别结束了，但没有拿到文字。可能没录到声音，或系统听写被关了。再点一次试试。';
-      }
-    };
-    recog.start();
-    setTimeout(() => { try { recog.stop(); } catch (e) {} }, 10000);
+    rec.start();
   } catch (e) {
-    R.asr = '异常:' + e.message;
-    $('asrBtn').disabled = false;
-    $('asrLog').textContent = '异常：' + e.message;
+    state.errors.push('start异常:' + e.name);
+    finish(cfg, state, 'start() 抛错');
   }
+}
+
+document.querySelectorAll('button[data-cfg]').forEach((b) => {
+  b.onclick = () => runConfig(b.dataset.cfg);
+});
+
+$('stopBtn').onclick = () => {
+  if (!active) { log('当前没有在识别'); return; }
+  const r = active;
+  try { r.rec.stop(); } catch (e) { finish(r.cfg, r, '手动停止抛错:' + e.name); }
+  log('已请求手动停止…');
 };
 
-/* ---------- 5. 报告 ---------- */
 function buildReport() {
-  const lines = ['=== 英语语音测试报告 ===', '', '[环境]'];
+  const lines = ['=== 英语语音测试 v2 报告 ===', '', '[环境]'];
   for (const [k, v] of Object.entries(R.env)) lines.push(k + '：' + v);
-  lines.push('', '[2 语音合成] ' + R.tts, '[3 录音] ' + R.rec, '[4 语音识别] ' + R.asr);
-  if (R.asrRaw.length) {
-    lines.push('识别细节：');
-    R.asrRaw.forEach((x) => lines.push('  ' + x.alts.join(' / ')));
-  }
-  if (R.errors.length) lines.push('错误：' + R.errors.join(', '));
+  lines.push('', '[四组配置结果]');
+  ['A', 'B', 'C', 'D'].forEach((cfg) => {
+    const r = R.runs[cfg];
+    if (!r) { lines.push(cfg + '（' + CONFIGS[cfg].label + '）：未测'); return; }
+    lines.push(cfg + '（' + r.label + '）');
+    lines.push('  结束原因：' + r.reason + '　用时：' + r.ms + 'ms' +
+      (r.audioStart !== undefined ? '　音频开始：' + r.audioStart + 'ms' : '') +
+      (r.soundStart !== undefined ? '　检测到说话：' + r.soundStart + 'ms' : ''));
+    lines.push('  中间结果：' + (r.interim.join(' / ') || '无'));
+    lines.push('  最终结果：' + (r.final.join(' / ') || '无'));
+    lines.push('  错误：' + (r.errors.join(', ') || '无'));
+  });
   return lines.join('\n');
 }
-function refreshReport() { $('report').textContent = buildReport(); }
-setInterval(refreshReport, 1000);
+function refresh() { $('report').textContent = buildReport(); }
+setInterval(refresh, 1000);
 
 $('copyBtn').onclick = async () => {
   const txt = buildReport();
@@ -266,16 +217,13 @@ $('copyBtn').onclick = async () => {
     const ta = document.createElement('textarea');
     ta.value = txt; document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); $('copyBtn').textContent = '✅ 已复制（备用方式）'; }
-    catch (e2) { $('copyBtn').textContent = '复制失败，请长按下面文字手动选中'; }
+    catch (e2) { $('copyBtn').textContent = '复制失败，请长按上面文字手动选中'; }
     document.body.removeChild(ta);
   }
   setTimeout(() => { $('copyBtn').textContent = '复制报告'; }, 4000);
 };
 
-window.speechSynthesis && window.speechSynthesis.addEventListener &&
-  window.speechSynthesis.addEventListener('voiceschanged', detectEnv);
-detectEnv();
-refreshReport();
+refresh();
 </script>
 </body>
 </html>
