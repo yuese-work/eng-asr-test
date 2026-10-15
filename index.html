@@ -457,8 +457,17 @@ function setMicListening() {
   micBtn.textContent = '🎤 正在听…点一下停止';
 }
 function stopListening() {
-  if (activeRec) activeRec.abort(true);
+  if (activeRec) { activeRec.abort(true); return; }
+  // 还停在"掐掉语音合成"的短暂等待里，此时取消就是直接作废这次启动
+  startToken++;
+  listening = false;
+  if (run) run.busy = false;
+  resetMic();
+  const hint = $('hint');
+  if (hint) hint.textContent = '停了。准备好了再点一次。';
 }
+
+let startToken = 0;
 
 /* ============================================================
    4. 判定：关键词命中，不要求逐字一致
@@ -650,14 +659,18 @@ async function doSpeak(n, isReading) {
   if (run.busy || listening) return;
   run.busy = true;
   const hint = $('hint');
+  const my = ++startToken;
+
+  // 先把按钮点亮再等待：这 350ms 如果不给反馈，手感上就是"点了没反应"
+  listening = true;
+  setMicListening();
+  hint.textContent = '说一句完整的英文就行，说完等一下';
 
   // 关键：先掐掉语音合成，避免和识别抢音频会话（这是 iPhone 上 aborted 的教训）
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   await new Promise((r) => setTimeout(r, 350));
 
-  listening = true;
-  setMicListening();
-  hint.textContent = '说一句完整的英文就行，说完等一下';
+  if (my !== startToken) { listening = false; run.busy = false; resetMic(); return; }
 
   const res = await recognizeOnce();
   listening = false;
