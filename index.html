@@ -3,286 +3,737 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>英语闯关 · 样子图</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>落地 · 英语闯关</title>
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0b0f16;
-    --panel: #141a24;
-    --panel2: #1b2330;
-    --line: #253044;
-    --text: #e7edf6;
-    --muted: #8d9bb0;
-    --amber: #f0b429;
-    --green: #4ec97f;
+    --bg:#0b0f16; --panel:#141a24; --panel2:#1b2330; --line:#253044;
+    --text:#e7edf6; --muted:#8d9bb0; --amber:#f0b429; --green:#4ec97f; --red:#ff8f8f;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
-    margin: 0; padding: 14px 12px 60px;
-    font: 16px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: var(--bg); color: var(--text);
-    -webkit-text-size-adjust: 100%;
+    margin:0; padding:0 0 40px;
+    font:16px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); -webkit-text-size-adjust:100%;
   }
-  .banner {
-    max-width: 390px; margin: 0 auto 18px; padding: 12px 14px;
-    background: #2a2113; border: 1px solid #6b5320; border-radius: 12px;
-    color: #ffd98a; font-size: 14px;
-  }
-  .cap {
-    max-width: 390px; margin: 0 auto 8px;
-    font-size: 13px; color: var(--muted); letter-spacing: .02em;
-  }
-  .phone {
-    max-width: 390px; margin: 0 auto 30px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
-    overflow: hidden;
-  }
+  .wrap { max-width:430px; margin:0 auto; }
+  .hidden { display:none !important; }
 
   /* 地图条 */
-  .map { position: relative; padding: 14px 10px 10px; background: #10161f; border-bottom: 1px solid var(--line); }
-  .map::before {
-    content: ""; position: absolute; left: 34px; right: 34px; top: 33px;
-    height: 3px; background: var(--line); border-radius: 2px;
-  }
-  .map::after {
-    content: ""; position: absolute; left: 34px; width: 96px; top: 33px;
-    height: 3px; background: var(--amber); border-radius: 2px;
-  }
-  .stops { position: relative; display: flex; }
-  .stop { flex: 1; text-align: center; font-size: 17px; }
+  .map { position:relative; padding:14px 10px 10px; background:#10161f; border-bottom:1px solid var(--line); }
+  .map::before { content:""; position:absolute; left:34px; right:34px; top:33px; height:3px; background:var(--line); border-radius:2px; }
+  .stops { position:relative; display:flex; }
+  .stop { flex:1; text-align:center; }
   .stop i {
-    display: block; width: 26px; height: 26px; margin: 0 auto 4px;
-    border-radius: 50%; background: var(--panel2); border: 2px solid var(--line);
-    font-style: normal; font-size: 13px; line-height: 22px;
+    display:block; width:26px; height:26px; margin:0 auto 4px; font-style:normal;
+    border-radius:50%; background:var(--panel2); border:2px solid var(--line);
+    font-size:13px; line-height:22px;
   }
-  .stop span { font-size: 11px; color: var(--muted); }
-  .stop.done i { background: var(--amber); border-color: var(--amber); color: #10161f; }
-  .stop.done span { color: var(--amber); }
-  .stop.now i { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(240,180,41,.18); }
-  .stop.now span { color: var(--text); font-weight: 600; }
+  .stop span { font-size:11px; color:var(--muted); }
+  .stop.done i { background:var(--amber); border-color:var(--amber); color:#10161f; }
+  .stop.done span { color:var(--amber); }
+  .stop.now i { border-color:var(--amber); box-shadow:0 0 0 4px rgba(240,180,41,.18); }
+  .stop.now span { color:var(--text); font-weight:600; }
 
-  /* 场景标题 */
-  .scene { padding: 12px 16px 4px; }
-  .scene b { display: block; font-size: 15px; }
-  .scene small { color: var(--muted); font-size: 12px; }
+  .pad { padding:18px 16px; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  h2 { font-size:16px; margin:0 0 10px; color:#9db4e0; }
+  h4 { font-size:14px; margin:0 0 10px; color:#9db4e0; }
+  p { margin:0 0 10px; color:#c2ccdd; font-size:15px; }
+  .muted { color:var(--muted); font-size:13px; }
 
-  /* 对话 */
-  .talk { padding: 8px 16px 0; }
-  .who {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px; border-radius: 20px; background: var(--panel2);
-    font-size: 12px; color: #cbd6e6; margin-bottom: 8px;
-  }
-  .who em { font-style: normal; color: var(--muted); }
-  .bubble {
-    background: var(--panel2); border: 1px solid var(--line);
-    border-radius: 4px 14px 14px 14px; padding: 12px 14px; margin-bottom: 10px;
-  }
-  .en { font-size: 19px; line-height: 1.45; }
-  .zh { color: var(--muted); font-size: 13px; margin-top: 6px; }
-  .play {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
-    padding: 4px 10px; border-radius: 20px; font-size: 12px; color: var(--amber);
-    background: rgba(240,180,41,.1); border: 1px solid rgba(240,180,41,.28);
-  }
-  .said {
-    border-left: 3px solid var(--green); padding: 8px 12px; margin: 12px 0;
-    background: rgba(78,201,127,.07); border-radius: 0 8px 8px 0;
-  }
-  .said b { color: var(--green); font-size: 12px; display: block; margin-bottom: 2px; }
-  .said p { margin: 0; font-size: 17px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .stat { display:flex; gap:12px; }
+  .stat div { flex:1; text-align:center; padding:12px 6px; background:var(--panel2); border-radius:10px; }
+  .stat b { display:block; font-size:22px; color:var(--amber); line-height:1.2; }
+  .stat span { font-size:11px; color:var(--muted); }
 
-  /* 行动区 */
-  .act { padding: 14px 16px 18px; border-top: 1px solid var(--line); background: #10161f; }
-  .mic {
-    display: block; width: 100%; padding: 18px; border-radius: 14px;
-    background: linear-gradient(180deg,#f7c548,#e0a114); color: #171017;
-    font-size: 18px; font-weight: 700; text-align: center;
+  .btn {
+    display:block; width:100%; padding:17px; margin:0 0 10px; border:0; border-radius:12px;
+    font:700 17px/1 -apple-system,"PingFang SC",sans-serif; text-align:center;
+    background:linear-gradient(180deg,#f7c548,#e0a114); color:#171017;
   }
-  .row { display: flex; gap: 10px; margin-top: 10px; }
-  .row div {
-    flex: 1; text-align: center; padding: 11px; border-radius: 10px;
-    background: var(--panel2); border: 1px solid var(--line);
-    font-size: 14px; color: #cfd9ea;
-  }
-  .opts { margin: 0; padding: 0; list-style: none; }
-  .opts li {
-    padding: 13px 14px; border-radius: 10px; background: var(--panel2);
-    border: 1px solid var(--line); margin-bottom: 9px; font-size: 15px;
-  }
-  .opts li b { color: var(--amber); margin-right: 8px; }
+  .btn.ghost { background:var(--panel2); border:1px solid var(--line); color:#cfd9ea; font-weight:600; }
+  .btn:disabled { opacity:.45; }
 
-  /* 提示态 */
-  .tip {
-    border: 1px dashed #6b5320; background: #1d1a10; border-radius: 12px;
-    padding: 12px 14px; margin: 10px 0 0;
+  /* 场景 */
+  .scene { padding:14px 16px 0; }
+  .scene b { display:block; font-size:15px; }
+  .scene small { color:var(--muted); font-size:12px; }
+  .talk { padding:10px 16px 0; }
+  .who { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:20px; background:var(--panel2); font-size:12px; color:#cbd6e6; margin-bottom:8px; }
+  .who em { font-style:normal; color:var(--muted); }
+  .bubble { background:var(--panel2); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:14px; margin-bottom:12px; }
+  .en { font-size:20px; line-height:1.45; }
+  .zh { color:var(--muted); font-size:13px; margin-top:8px; }
+  .playrow { display:flex; gap:8px; margin-top:12px; }
+  .playrow button {
+    flex:1; padding:9px; border-radius:9px; font:600 13px/1 inherit;
+    background:rgba(240,180,41,.1); border:1px solid rgba(240,180,41,.3); color:var(--amber);
   }
-  .tip b { color: var(--amber); font-size: 13px; }
-  .tip p { margin: 6px 0 0; font-size: 15px; color: #e4d5ae; }
-  .hearts { display: flex; gap: 5px; }
-  .hearts i { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); font-style: normal; }
-  .hearts i.off { background: #33405a; }
+  .said { border-left:3px solid var(--green); padding:9px 12px; margin:12px 0 0; background:rgba(78,201,127,.07); border-radius:0 8px 8px 0; }
+  .said b { color:var(--green); font-size:12px; display:block; }
+  .said p { margin:2px 0 0; font-size:17px; }
+  .tip { border:1px dashed #6b5320; background:#1d1a10; border-radius:12px; padding:12px 14px; margin-top:12px; }
+  .tip b { color:var(--amber); font-size:13px; }
+  .tip p { margin:6px 0 0; font-size:15px; color:#e4d5ae; }
+  .opts { margin:0; padding:0; list-style:none; }
+  .opts li { padding:14px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); margin-bottom:9px; font-size:15px; }
+  .opts li b { color:var(--amber); margin-right:9px; }
+  .opts li.right { border-color:var(--green); }
+  .opts li.wrong { border-color:var(--red); }
+
+  .act { padding:14px 16px 20px; border-top:1px solid var(--line); background:#10161f; margin-top:16px; }
+  .mic { display:block; width:100%; padding:20px; border:0; border-radius:14px; font:700 18px/1 inherit;
+         background:linear-gradient(180deg,#f7c548,#e0a114); color:#171017; text-align:center; }
+  .mic.on { background:linear-gradient(180deg,#4ec97f,#2f9d5c); color:#08160e; }
+  .actrow { display:flex; gap:10px; margin-top:10px; }
+  .actrow button { flex:1; padding:12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:#cfd9ea; font:600 14px/1 inherit; }
+  .hintline { text-align:center; color:var(--muted); font-size:13px; margin:10px 0 0; min-height:20px; }
 
   /* 结算 */
-  .score { text-align: center; padding: 22px 16px 6px; }
-  .score b { font-size: 46px; color: var(--amber); line-height: 1; }
-  .score small { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
-  .drops { display: flex; gap: 10px; padding: 16px 16px 4px; }
-  .drop {
-    flex: 1; text-align: center; padding: 14px 8px; border-radius: 12px;
-    background: var(--panel2); border: 1px solid var(--line);
-  }
-  .drop b { display: block; font-size: 24px; }
-  .drop span { font-size: 11px; color: var(--muted); }
-  .fix { padding: 16px; }
-  .fix h4 { margin: 0 0 10px; font-size: 14px; color: #9db4e0; }
-  .fixrow {
-    background: #10161f; border: 1px solid var(--line); border-radius: 10px;
-    padding: 11px 13px; margin-bottom: 9px;
-  }
-  .fixrow em { font-style: normal; font-size: 11px; color: var(--muted); display: block; }
-  .fixrow p { margin: 2px 0 0; font-size: 16px; }
-  .fixrow .bad { color: #ff8f8f; }
-  .fixrow .good { color: var(--green); }
-  .again {
-    margin: 4px 16px 20px; padding: 15px; text-align: center; border-radius: 12px;
-    background: var(--panel2); border: 1px solid var(--amber); color: var(--amber);
-    font-weight: 700;
-  }
+  .bigscore { text-align:center; padding:8px 0 4px; }
+  .bigscore b { font-size:52px; color:var(--amber); line-height:1; }
+  .bigscore small { display:block; color:var(--muted); font-size:12px; margin-top:8px; }
+  .drops { display:flex; gap:10px; }
+  .drop { flex:1; text-align:center; padding:14px 6px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); }
+  .drop b { display:block; font-size:24px; }
+  .drop span { font-size:11px; color:var(--muted); }
+  .fixrow { background:#10161f; border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:9px; }
+  .fixrow em { font-style:normal; font-size:11px; color:var(--muted); display:block; }
+  .fixrow p { margin:2px 0 0; font-size:16px; }
+  .good { color:var(--green); }
+  .bad { color:var(--red); }
 
-  .notes {
-    max-width: 390px; margin: 0 auto; padding: 16px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
-    font-size: 14px; color: #b9c6d8;
+  /* 词卡 */
+  .word { display:flex; align-items:flex-start; gap:10px; padding:12px; background:#10161f; border:1px solid var(--line); border-radius:10px; margin-bottom:9px; }
+  .word .l { flex:1; min-width:0; }
+  .word .w { font-size:18px; font-weight:600; }
+  .word .ipa { font-size:13px; color:var(--amber); margin-top:2px; }
+  .word .def { font-size:14px; color:#c2ccdd; margin-top:3px; }
+  .word .eg { font-size:13px; color:var(--muted); margin-top:6px; font-style:italic; }
+  .word .r { display:flex; flex-direction:column; gap:6px; }
+  .word .r button { padding:7px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--amber); font:600 12px/1 inherit; white-space:nowrap; }
+  .word .r button.small { color:var(--muted); }
+  .toast {
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+    background:#e7edf6; color:#10161f; padding:10px 18px; border-radius:22px;
+    font-size:14px; font-weight:600; opacity:0; transition:opacity .2s; pointer-events:none; z-index:99;
   }
-  .notes h3 { margin: 0 0 8px; font-size: 15px; color: var(--text); }
-  .notes ul { margin: 0; padding-left: 18px; }
-  .notes li { margin-bottom: 6px; }
+  .toast.show { opacity:.96; }
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="banner">
-  <b>这是样子图（静态）</b><br>
-  只有排版和文字，点不动、不会说话、没有逻辑。你看的是"长什么样、顺不顺手"。
+  <!-- ============ 首页 ============ -->
+  <div id="screenHome">
+    <div class="map" id="mapHome"></div>
+    <div class="pad">
+      <h1>落地</h1>
+      <p class="muted">第一季 · 从机场到酒店。每一站都要你开口，说对了才能往前走。</p>
+
+      <div class="card">
+        <h2>今日</h2>
+        <div class="stat">
+          <div><b id="statWords">0</b><span>已收集词</span></div>
+          <div><b id="statLevels">0</b><span>通关数</span></div>
+          <div><b id="statBest">—</b><span>最高分</span></div>
+        </div>
+        <p class="muted" style="margin-top:12px">四级大纲 <b id="statTotal">4615</b> 词 · 已收集 <b id="statWords2">0</b></p>
+      </div>
+
+      <button class="btn" id="btnStart">开始第 2 站 · 入境审查</button>
+      <button class="btn ghost" id="btnDex">词汇图鉴（<span id="dexCount">0</span>）</button>
+    </div>
+  </div>
+
+  <!-- ============ 关卡 ============ -->
+  <div id="screenNode" class="hidden">
+    <div class="map" id="mapNode"></div>
+    <div class="scene">
+      <b id="nodeScene">关西机场 · 入境审查</b>
+      <small id="nodeProgress">第 1 / 5 个节点</small>
+    </div>
+    <div class="talk">
+      <div class="who" id="nodeWho">🛂 海关官员 <em>· Officer Chen</em></div>
+      <div class="bubble">
+        <div class="en" id="nodeEn">—</div>
+        <div class="zh hidden" id="nodeZh"></div>
+        <div class="playrow">
+          <button id="btnPlay">🔊 听一遍</button>
+          <button id="btnSlow">🐢 慢速</button>
+        </div>
+      </div>
+      <div id="feedback"></div>
+    </div>
+    <div class="act" id="nodeAct"></div>
+  </div>
+
+  <!-- ============ 结算 ============ -->
+  <div id="screenResult" class="hidden">
+    <div class="map" id="mapResult"></div>
+    <div class="pad">
+      <div class="card">
+        <div class="bigscore">
+          <b id="resScore">0</b>
+          <small id="resMeta">本关得分</small>
+        </div>
+      </div>
+      <div class="drops" id="resDrops"></div>
+
+      <div class="card" style="margin-top:14px">
+        <h4>本关新词（<span id="resWordCount">0</span>）</h4>
+        <p class="muted" style="margin-bottom:12px">点 🔊 听发音。音标看熟了会自动淡出，想再看点「音标」。</p>
+        <div id="resWords"></div>
+      </div>
+
+      <div class="card" id="resMistakeBox">
+        <h4>这几句明天先复习</h4>
+        <div id="resMistakes"></div>
+      </div>
+
+      <button class="btn" id="btnHome">回到地图</button>
+    </div>
+  </div>
+
+  <!-- ============ 图鉴 ============ -->
+  <div id="screenDex" class="hidden">
+    <div class="pad">
+      <h1>词汇图鉴</h1>
+      <p class="muted">四级大纲 <span id="dexTotal">4615</span> 词 · 已收集 <span id="dexCount2">0</span></p>
+      <div id="dexList"></div>
+      <button class="btn ghost" id="btnDexBack">返回</button>
+    </div>
+  </div>
+
 </div>
+<div class="toast" id="toast"></div>
 
-<p class="cap">第 1 屏 · 关卡进行中（开口说）</p>
-<div class="phone">
-  <div class="map">
-    <div class="stops">
-      <div class="stop done"><i>1</i><span>落地</span></div>
-      <div class="stop now"><i>2</i><span>海关</span></div>
-      <div class="stop"><i>3</i><span>行李</span></div>
-      <div class="stop"><i>4</i><span>出口</span></div>
-      <div class="stop"><i>5</i><span>打车</span></div>
-    </div>
-  </div>
+<script>
+'use strict';
 
-  <div class="scene">
-    <b>关西机场 · 入境审查</b>
-    <small>第 2 站 · 第 3 个节点（共 5 个）</small>
-  </div>
+/* ============================================================
+   0. 词库：全部取自《大学英语四级大纲单词表》（4615 词）原文
+   ============================================================ */
+const WORDS = {
+  passport:     { ipa:'[ˈpɑːspɔːt]',      def:'n. 护照',              eg:'Passport and arrival card, please.' },
+  arrival:      { ipa:'[əˈraivəl]',        def:'n. 到达；到来',        eg:'Passport and arrival card, please.' },
+  purpose:      { ipa:'[ˈpəːpəs]',         def:'n. 目的；意图',        eg:"What's the purpose of your visit?" },
+  visit:        { ipa:'[ˈvizit]',          def:'vt.&n. 访问，参观',    eg:"What's the purpose of your visit?" },
+  sightseeing:  { ipa:'[ˈsaitsiːiŋ]',      def:'n. 观光，游览',        eg:"I'm here for sightseeing." },
+  business:     { ipa:'[ˈbiznis]',         def:'n. 商业，生意；事务',  eg:"I'm here on business." },
+  officer:      { ipa:'[ˈɔfisə]',          def:'n. 官员',              eg:'The officer asked three questions.' },
+  document:     { ipa:'[ˈdɔkjumənt]',      def:'n. 公文，文件；证件',  eg:'Here are my documents.' },
+  luggage:      { ipa:'[ˈlʌgidʒ]',         def:'n. 行李；皮箱，皮包',  eg:'My luggage is at baggage claim.' },
+  baggage:      { ipa:'[ˈbægidʒ]',         def:'n. 行李',              eg:'My luggage is at baggage claim.' },
+  declare:      { ipa:'[diˈkleə]',         def:'vt. 断言；声明；申报', eg:'Do you have anything to declare?' },
+  return:       { ipa:'[riˈtəːn]',         def:'vi.&n. 回来，返回',    eg:'Do you have a return ticket?' },
+  ticket:       { ipa:'[ˈtikit]',          def:'n. 票，券',            eg:'Do you have a return ticket?' },
+  hotel:        { ipa:'[həuˈtel]',         def:'n. 旅馆',              eg:"I'm staying at a hotel in Osaka." },
+  stay:         { ipa:'[stei]',            def:'vi. 停留；住　n. 逗留', eg:'How long will you stay?' },
+  destination:  { ipa:'[ˌdestiˈnei∫ən]',   def:'n. 目的地，终点',      eg:'My destination is Osaka.' },
+  security:     { ipa:'[siˈkjuəriti]',     def:'n. 安全，安全感',      eg:'Please go through security.' },
+  check:        { ipa:'[t∫ek]',            def:'vt. 检查；制止　n. 检查', eg:'Please check your bags.' },
+  information:  { ipa:'[ˌinfəˈmei∫ən]',    def:'n. 消息，信息；通知',  eg:'Where is the information desk?' },
+  address:      { ipa:'[əˈdres]',          def:'n. 地址；演说',        eg:'What’s your address in Japan?' },
+  occupation:   { ipa:'[ˌɔkjuˈpei∫ən]',    def:'n. 占领；职业',        eg:'What’s your occupation?' },
+  departure:    { ipa:'[diˈpɑːt∫ə]',       def:'n. 离开，出发，起程',  eg:'The departure gate is B12.' },
+  flight:       { ipa:'[flait]',           def:'n. 航班；飞行',        eg:'My flight lands at noon.' },
+  passenger:    { ipa:'[ˈpæsindʒə]',       def:'n. 乘客，旅客',        eg:'Passengers without bags go first.' },
+  form:         { ipa:'[fɔːm]',            def:'n. 形式；表格　vt. 形成', eg:'Please fill in this form.' },
+  holiday:      { ipa:'[ˈhɔlidei]',        def:'n. 假日，节日；假期',  eg:"I'm here on holiday." },
+  journey:      { ipa:'[ˈdʒəːni]',         def:'n. 旅行，旅程',        eg:'How was your journey?' },
+};
 
-  <div class="talk">
-    <div class="who">🛂 海关官员 <em>· Officer Chen</em></div>
-    <div class="bubble">
-      <div class="en">What's the purpose of your visit?</div>
-      <div class="zh">你这次来的目的是什么？</div>
-      <div class="play">🔊 听一遍（可调慢速）</div>
-    </div>
+/* ============================================================
+   1. 关卡数据
+   ============================================================ */
+const LEVEL = {
+  id: 'l1',
+  scene: '关西机场 · 入境审查',
+  stops: ['落地', '海关', '行李', '出口', '打车'],
+  at: 1,
+  nodes: [
+    {
+      kind: 'choice',
+      who: '🛂 海关官员 · Officer Chen',
+      en: 'Next, please. Passport and arrival card.',
+      zh: '下一位。护照和入境卡。',
+      words: ['passport', 'arrival', 'document', 'form'],
+      options: [
+        { text: '出示护照和入境卡', ok: true },
+        { text: '出示登机牌', ok: false },
+        { text: '出示酒店订单', ok: false }
+      ]
+    },
+    {
+      kind: 'speak',
+      who: '🛂 海关官员 · Officer Chen',
+      en: "What's the purpose of your visit?",
+      zh: '你这次来的目的是什么？',
+      words: ['purpose', 'visit', 'sightseeing', 'business', 'holiday', 'journey'],
+      frame: "I'm here for ___ .",
+      frameFill: '可以填：sightseeing / business / a holiday',
+      answer: "I'm here for sightseeing.",
+      accept: [['sightseeing', 'tourist', 'tourism', 'tour', 'vacation', 'holiday', 'travel']]
+    },
+    {
+      kind: 'speak',
+      who: '🛂 海关官员 · Officer Chen',
+      en: 'How long will you stay?',
+      zh: '你打算待多久？',
+      words: ['stay', 'hotel', 'destination'],
+      frame: 'About ___ .',
+      frameFill: '可以填：ten days / a week / two weeks',
+      answer: 'About ten days.',
+      accept: [['day', 'days', 'week', 'weeks', 'month', 'months', 'night', 'nights']]
+    },
+    {
+      kind: 'speak',
+      who: '🛂 海关官员 · Officer Chen',
+      en: 'Where will you be staying?',
+      zh: '你住哪里？',
+      words: ['hotel', 'address', 'stay', 'destination'],
+      frame: "I'm staying at ___ in ___ .",
+      frameFill: '可以填：a hotel / the Hilton　Osaka / Tokyo',
+      answer: "I'm staying at a hotel in Osaka.",
+      accept: [['hotel', 'hostel', 'inn', 'apartment', 'airbnb', 'friend', 'osaka', 'tokyo', 'staying', 'stay']]
+    },
+    {
+      kind: 'speak',
+      who: '🛂 海关官员 · Officer Chen',
+      en: 'Do you have a return ticket?',
+      zh: '你有回程机票吗？',
+      words: ['return', 'ticket', 'flight', 'departure'],
+      frame: 'Yes, ___ .',
+      frameFill: '可以填：here it is / I do / here you go',
+      answer: 'Yes, here it is.',
+      accept: [['yes', 'yeah', 'yep', 'sure', 'here', 'have', 'do']]
+    }
+  ]
+};
 
-    <div class="said">
-      <b>你说的</b>
-      <p>Sightseeing.</p>
-    </div>
-  </div>
+/* ============================================================
+   2. 存档
+   ============================================================ */
+const KEY = 'eng_luodi_v1';
+const TARGET_TOTAL = 4615;
 
-  <div class="act">
-    <div class="mic">🎤 按住说话</div>
-    <div class="row">
-      <div>再说一次</div>
-      <div>提示</div>
-    </div>
-  </div>
-</div>
+function loadState() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.v === 1) return s;
+    }
+  } catch (e) { /* 存档损坏就当新档 */ }
+  return { v: 1, vocab: {}, level: {}, mistakes: [], best: null };
+}
+function saveState() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('存档失败：浏览器存储被禁用'); }
+}
+let S = loadState();
 
-<p class="cap">第 2 屏 · 卡住了（提示态，跟读也算过）</p>
-<div class="phone">
-  <div class="map">
-    <div class="stops">
-      <div class="stop done"><i>1</i><span>落地</span></div>
-      <div class="stop now"><i>2</i><span>海关</span></div>
-      <div class="stop"><i>3</i><span>行李</span></div>
-      <div class="stop"><i>4</i><span>出口</span></div>
-      <div class="stop"><i>5</i><span>打车</span></div>
-    </div>
-  </div>
+/* 音标渐隐：见过 4 次、或连续读对 2 次，就藏起来 */
+function ipaHidden(w) {
+  const e = S.vocab[w];
+  if (!e) return false;
+  if (e.ipaOff) return true;
+  return e.seen >= 4 || e.streak >= 2;
+}
+function touchWord(w) {
+  if (!S.vocab[w]) S.vocab[w] = { seen: 0, streak: 0, ipaOff: false, first: today() };
+  S.vocab[w].seen++;
+  saveState();
+}
+function today() { return new Date().toISOString().slice(0, 10); }
 
-  <div class="scene">
-    <b>关西机场 · 入境审查</b>
-    <small>本节点已经试了 2 次</small>
-  </div>
+/* ============================================================
+   3. 语音：合成 + 识别（配置来自 iPhone 实测结论）
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let voice = null;
 
-  <div class="talk">
-    <div class="who">🛂 海关官员 <em>· Officer Chen</em></div>
-    <div class="bubble">
-      <div class="en">What's the purpose of your visit?</div>
-      <div class="play">🔊 慢速重播</div>
-    </div>
+function pickVoice() {
+  if (!window.speechSynthesis) return;
+  const vs = window.speechSynthesis.getVoices();
+  voice = vs.find((v) => /en[-_]US/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
+}
+pickVoice();
+if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+  window.speechSynthesis.addEventListener('voiceschanged', pickVoice);
+}
 
-    <div class="tip">
-      <b>句型给你搭好了</b>
-      <p>I'm here for ___ .<br>可以填：sightseeing / business / a holiday</p>
-    </div>
-  </div>
+let speakSeq = 0;
+function speak(text, slow) {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) { resolve(); return; }
+    const my = ++speakSeq;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = slow ? 0.6 : 0.92;
+    if (voice) u.voice = voice;
+    u.onend = () => { if (my === speakSeq) resolve(); };
+    u.onerror = () => { if (my === speakSeq) resolve(); };
+    window.speechSynthesis.speak(u);
+    setTimeout(() => { if (my === speakSeq) resolve(); }, slow ? 6000 : 4000);
+  });
+}
 
-  <div class="act">
-    <div class="mic">🎤 跟着念一遍也算过</div>
-    <div class="row">
-      <div>看标准答案</div>
-      <div>跳过这关</div>
-    </div>
-  </div>
-</div>
+/* 识别：不连续、单次、让它自己结束；中间结果做兜底 */
+function recognizeOnce() {
+  return new Promise((resolve) => {
+    if (!SR) { resolve({ ok: false, reason: 'no-api', text: '', errors: ['no-api'] }); return; }
+    const rec = new SR();
+    rec.lang = 'en-US';
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
 
-<p class="cap">第 3 屏 · 结算（学习真正发生的地方）</p>
-<div class="phone">
-  <div class="score">
-    <b>88</b>
-    <small>本关得分 · 平均反应 1.8 秒</small>
-  </div>
+    const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null };
+    let done = false;
+    const t0 = performance.now();
+    const finish = (reason) => {
+      if (done) return;
+      done = true;
+      out.reason = reason;
+      const final = out.text || out.interim;
+      out.text = final;
+      out.ok = !!final && out.errors.length === 0;
+      resolve(out);
+    };
 
-  <div class="drops">
-    <div class="drop"><b>🏅</b><span>ARRIVAL 章</span></div>
-    <div class="drop"><b>6</b><span>个新词进图鉴</span></div>
-    <div class="drop"><b>2</b><span>句要重练</span></div>
-  </div>
+    rec.onstart = () => { out.started = true; };
+    rec.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); };
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) out.text += r[0].transcript;
+        else out.interim = r[0].transcript;
+      }
+      if (out.text) out.text = out.text.trim();
+    };
+    rec.onerror = (e) => { out.errors.push(e.error); };
+    rec.onend = () => { finish('onend'); };
 
-  <div class="fix">
-    <h4>这两句说错了，明天先复习它们</h4>
-    <div class="fixrow">
-      <em>标准说法</em>
-      <p class="good">I'm here for sightseeing.</p>
-    </div>
-    <div class="fixrow">
-      <em>你刚才说的</em>
-      <p class="bad">I am sightseeing here.</p>
-    </div>
-  </div>
+    try { rec.start(); } catch (e) { out.errors.push('start:' + e.name); finish('start-failed'); }
+  });
+}
 
-  <div class="again">🔁 重打这两句</div>
-</div>
+/* ============================================================
+   4. 判定：关键词命中，不要求逐字一致
+   ============================================================ */
+function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function hasWord(t, k) { return new RegExp('(^|[^a-z])' + k + '([^a-z]|$)', 'i').test(t); }
+function judge(accept, text) {
+  const t = norm(text);
+  if (!t) return false;
+  return accept.every((group) => group.some((k) => hasWord(t, k)));
+}
 
-<div class="notes">
-  <h3>这一版里没有的东西</h3>
-  <ul>
-    <li>对话不会真的说话（正式版会念出来，可以调慢速）</li>
-    <li>「按住说话」不会录音、不会判分（正式版用你测过的 C 配置）</li>
-    <li>地图不会动（正式版过关会亮起下一格）</li>
-    <li>没有背景图，只有排版——每一分钱都花在学习交互上</li>
-  </ul>
-</div>
+/* ============================================================
+   5. 界面
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+function show(id) {
+  ['screenHome', 'screenNode', 'screenResult', 'screenDex'].forEach((s) => $(s).classList.add('hidden'));
+  $(id).classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+function renderMap(el, at) {
+  el.innerHTML = '<div class="stops">' + LEVEL.stops.map((name, i) => {
+    const cls = i < at ? 'done' : (i === at ? 'now' : '');
+    const mark = i < at ? '✓' : (i + 1);
+    return '<div class="stop ' + cls + '"><i>' + mark + '</i><span>' + name + '</span></div>';
+  }).join('') + '</div>';
+}
 
+/* 词卡 */
+function wordCard(w) {
+  const d = WORDS[w] || { ipa: '', def: '', eg: '' };
+  const hidden = ipaHidden(w);
+  return '<div class="word" data-w="' + w + '">' +
+    '<div class="l">' +
+      '<div class="w">' + w + '</div>' +
+      '<div class="ipa"' + (hidden ? ' style="visibility:hidden"' : '') + '>' + d.ipa + '</div>' +
+      '<div class="def">' + d.def + '</div>' +
+      (d.eg ? '<div class="eg">' + d.eg + '</div>' : '') +
+    '</div>' +
+    '<div class="r">' +
+      '<button data-say="' + w + '">🔊</button>' +
+      '<button class="small" data-ipa="' + w + '">' + (hidden ? '看音标' : '收起音标') + '</button>' +
+    '</div>' +
+  '</div>';
+}
+function bindCards(root) {
+  root.querySelectorAll('[data-say]').forEach((b) => {
+    b.onclick = () => speak(b.dataset.say, false);
+  });
+  root.querySelectorAll('[data-ipa]').forEach((b) => {
+    b.onclick = () => {
+      const w = b.dataset.ipa;
+      if (!S.vocab[w]) S.vocab[w] = { seen: 0, streak: 0, ipaOff: false, first: today() };
+      S.vocab[w].ipaOff = !S.vocab[w].ipaOff;
+      saveState();
+      const card = b.closest('.word');
+      const ipa = card.querySelector('.ipa');
+      const nowHidden = S.vocab[w].ipaOff;
+      ipa.style.visibility = nowHidden ? 'hidden' : 'visible';
+      b.textContent = nowHidden ? '看音标' : '收起音标';
+    };
+  });
+}
+
+/* ============================================================
+   6. 首页 / 图鉴
+   ============================================================ */
+function collected() { return Object.keys(S.vocab).length; }
+
+function renderHome() {
+  renderMap($('mapHome'), LEVEL.at);
+  const done = S.level[LEVEL.id] ? 1 : 0;
+  $('statWords').textContent = collected();
+  $('statWords2').textContent = collected();
+  $('statLevels').textContent = done;
+  $('statBest').textContent = S.best == null ? '—' : S.best;
+  $('statTotal').textContent = TARGET_TOTAL;
+  $('dexCount').textContent = collected();
+  $('btnStart').textContent = S.level[LEVEL.id] ? '再打一遍 · 入境审查' : '开始第 2 站 · 入境审查';
+  show('screenHome');
+}
+
+function renderDex() {
+  $('dexTotal').textContent = TARGET_TOTAL;
+  $('dexCount2').textContent = collected();
+  const list = Object.keys(S.vocab);
+  $('dexList').innerHTML = list.length
+    ? list.map(wordCard).join('')
+    : '<p class="muted">还没有收集到词。玩一次第一关就会有。</p>';
+  bindCards($('dexList'));
+  show('screenDex');
+}
+
+/* ============================================================
+   7. 关卡流程
+   ============================================================ */
+let run = null;
+
+function startLevel() {
+  run = {
+    idx: 0,
+    attempts: 0,
+    scores: [],
+    react: [],
+    wrongSaid: [],
+    newWords: [],
+    usedWords: {},
+    busy: false
+  };
+  show('screenNode');
+  renderNode();
+}
+
+function renderNode() {
+  const n = LEVEL.nodes[run.idx];
+  renderMap($('mapNode'), LEVEL.at);
+  $('nodeScene').textContent = LEVEL.scene;
+  $('nodeProgress').textContent = '第 ' + (run.idx + 1) + ' / ' + LEVEL.nodes.length + ' 个节点';
+  $('nodeWho').textContent = n.who;
+  $('nodeEn').textContent = n.en;
+  $('nodeZh').textContent = n.zh;
+  $('nodeZh').classList.add('hidden');
+  $('feedback').innerHTML = '';
+
+  // 记账：这一节点涉及的词算"见过"
+  (n.words || []).forEach((w) => {
+    if (!run.usedWords[w]) { run.usedWords[w] = true; run.newWords.push(w); }
+    touchWord(w);
+  });
+
+  if (n.kind === 'choice') renderChoice(n); else renderSpeak(n);
+  speak(n.en, false);
+}
+
+function renderChoice(n) {
+  $('nodeAct').innerHTML =
+    '<ul class="opts">' + n.options.map((o, i) =>
+      '<li data-opt="' + i + '"><b>' + 'ABC'[i] + '</b>' + o.text + '</li>').join('') + '</ul>';
+  $('nodeAct').querySelectorAll('[data-opt]').forEach((li) => {
+    li.onclick = () => {
+      if (run.busy) return;
+      const o = n.options[Number(li.dataset.opt)];
+      if (o.ok) {
+        li.classList.add('right');
+        run.scores.push(100);
+        $('feedback').innerHTML = '<div class="said"><b>正确</b><p>听对了。往前走。</p></div>';
+        setTimeout(nextNode, 900);
+      } else {
+        li.classList.add('wrong');
+        $('feedback').innerHTML = '<div class="tip"><b>再听一次</b><p>他在要两样东西：护照，还有入境卡。</p></div>';
+        speak(n.en, true);
+      }
+    };
+  });
+}
+
+function renderSpeak(n) {
+  $('nodeAct').innerHTML =
+    '<button class="mic" id="btnMic">🎤 点一下开始说</button>' +
+    '<div class="actrow">' +
+      '<button id="btnRetry">再说一次</button>' +
+      '<button id="btnAnswer">看标准答案</button>' +
+    '</div>' +
+    '<p class="hintline" id="hint">正常语速说就行，说完等一下</p>';
+  $('btnMic').onclick = () => doSpeak(n, false);
+  $('btnRetry').onclick = () => doSpeak(n, false);
+  $('btnAnswer').onclick = () => revealAnswer(n);
+}
+
+async function doSpeak(n, isReading) {
+  if (run.busy) return;
+  run.busy = true;
+  const mic = $('btnMic');
+  const hint = $('hint');
+
+  // 关键：先掐掉语音合成，避免和识别抢音频会话（这是 iPhone 上 aborted 的教训）
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  await new Promise((r) => setTimeout(r, 350));
+
+  mic.classList.add('on');
+  mic.textContent = '🎤 正在听…';
+  hint.textContent = '请说：' + (n.answer ? n.answer : '');
+
+  const res = await recognizeOnce();
+  mic.classList.remove('on');
+  run.busy = false;
+
+  const said = res.text || '';
+  if (!said) {
+    run.attempts++;
+    stepDown(n, '没听到你说话。' + (res.errors.length ? '（' + res.errors.join(', ') + '）' : '可能是网络或麦克风权限的问题，再试一次。'));
+    return;
+  }
+
+  if (res.reactMs) run.react.push(res.reactMs);
+
+  const pass = judge(n.accept, said);
+  if (pass) {
+    const score = run.attempts === 0 ? 100 : (run.attempts === 1 ? 70 : 50);
+    run.scores.push(isReading ? 30 : score);
+    $('feedback').innerHTML = '<div class="said"><b>通过了</b><p>' + esc(said) + '</p></div>';
+    const w = (n.words || [])[0];
+    if (w && S.vocab[w]) { S.vocab[w].streak++; saveState(); }
+    run.busy = true;
+    mic.disabled = true;
+    setTimeout(nextNode, 1000);
+  } else {
+    run.attempts++;
+    run.wrongSaid.push(said);
+    stepDown(n, '听到了：' + esc(said) + '　意思还差一点。');
+  }
+}
+
+function stepDown(n, msg) {
+  run.wrongSaid.push('__msg__' + msg);
+  const tries = run.attempts;
+  let html = '<div class="tip"><b>' + msg + '</b>';
+  if (tries === 1) {
+    html += '<p>点「慢速」再听一遍他在问什么。</p></div>';
+    $('feedback').innerHTML = html;
+    speak(n.en, true);
+  } else if (tries === 2) {
+    $('nodeZh').classList.remove('hidden');
+    html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p></div>';
+    $('feedback').innerHTML = html;
+    speak(n.answer, true);
+  } else {
+    revealAnswer(n);
+  }
+}
+
+function revealAnswer(n) {
+  $('nodeZh').classList.remove('hidden');
+  $('feedback').innerHTML =
+    '<div class="tip"><b>标准说法</b><p>' + esc(n.answer) + '</p></div>' +
+    '<div class="actrow" style="margin-top:12px"><button id="btnShadow">🎤 跟着念一遍（算通过）</button></div>';
+  speak(n.answer, true);
+  const b = $('btnShadow');
+  if (b) b.onclick = () => doSpeak(n, true);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function nextNode() {
+  run.idx++;
+  run.attempts = 0;
+  if (run.idx >= LEVEL.nodes.length) finishLevel(); else renderNode();
+}
+
+/* ============================================================
+   8. 结算
+   ============================================================ */
+function finishLevel() {
+  const score = run.scores.length
+    ? Math.round(run.scores.reduce((a, b) => a + b, 0) / LEVEL.nodes.length)
+    : 0;
+  const avgReact = run.react.length
+    ? (run.react.reduce((a, b) => a + b, 0) / run.react.length / 1000).toFixed(1)
+    : null;
+
+  S.level[LEVEL.id] = { done: true, score: score, date: today() };
+  if (S.best == null || score > S.best) S.best = score;
+  saveState();
+
+  renderMap($('mapResult'), LEVEL.at + 1);
+  $('resScore').textContent = score;
+  $('resMeta').textContent = '本关得分 · ' + (avgReact ? '平均反应 ' + avgReact + ' 秒' : '未测到反应时间');
+  $('resDrops').innerHTML =
+    '<div class="drop"><b>🏅</b><span>ARRIVAL 章</span></div>' +
+    '<div class="drop"><b>' + run.newWords.length + '</b><span>个词进图鉴</span></div>' +
+    '<div class="drop"><b>' + Math.round(score) + '</b><span>本关分数</span></div>';
+
+  $('resWordCount').textContent = run.newWords.length;
+  $('resWords').innerHTML = run.newWords.map(wordCard).join('');
+  bindCards($('resWords'));
+
+  const bad = run.wrongSaid.filter((s) => !s.startsWith('__msg__'));
+  if (bad.length) {
+    $('resMistakeBox').classList.remove('hidden');
+    $('resMistakes').innerHTML =
+    '<div class="fixrow"><em>标准说法</em><p class="good">' +
+      esc(LEVEL.nodes.map((n) => n.answer).filter(Boolean).join('　/　')) + '</p></div>' +
+    '<div class="fixrow"><em>你刚才说的（识别到的原文）</em><p class="bad">' +
+      bad.map(esc).join('<br>') + '</p></div>';
+  } else {
+    $('resMistakeBox').classList.add('hidden');
+  }
+  show('screenResult');
+}
+
+/* ============================================================
+   9. 绑定
+   ============================================================ */
+$('btnStart').onclick = startLevel;
+$('btnHome').onclick = renderHome;
+$('btnDex').onclick = renderDex;
+$('btnDexBack').onclick = renderHome;
+$('btnPlay').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, false);
+$('btnSlow').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, true);
+
+window.addEventListener('orientationchange', () => window.scrollTo(0, 0));
+renderHome();
+</script>
 </body>
 </html>
