@@ -164,6 +164,7 @@
         <div class="playrow">
           <button id="btnPlay">🔊 听一遍</button>
           <button id="btnSlow">🐢 慢速</button>
+          <button id="btnTrans">译 翻译</button>
         </div>
       </div>
       <div id="feedback"></div>
@@ -277,6 +278,7 @@ const LEVEL = {
       frame: "I'm here for ___ .",
       frameFill: '可以填：sightseeing / business / a holiday',
       answer: "I'm here for sightseeing.",
+      answerZh: '我是来观光的。',
       accept: [['sightseeing', 'tourist', 'tourism', 'tour', 'vacation', 'holiday', 'travel']]
     },
     {
@@ -288,6 +290,7 @@ const LEVEL = {
       frame: 'About ___ .',
       frameFill: '可以填：ten days / a week / two weeks',
       answer: 'About ten days.',
+      answerZh: '大概十天。',
       accept: [['day', 'days', 'week', 'weeks', 'month', 'months', 'night', 'nights']]
     },
     {
@@ -299,6 +302,7 @@ const LEVEL = {
       frame: "I'm staying at ___ in ___ .",
       frameFill: '可以填：a hotel / the Hilton　Osaka / Tokyo',
       answer: "I'm staying at a hotel in Osaka.",
+      answerZh: '我住在大阪的一家酒店。',
       accept: [['hotel', 'hostel', 'inn', 'apartment', 'airbnb', 'friend', 'osaka', 'tokyo', 'staying', 'stay']]
     },
     {
@@ -310,6 +314,7 @@ const LEVEL = {
       frame: 'Yes, ___ .',
       frameFill: '可以填：here it is / I do / here you go',
       answer: 'Yes, here it is.',
+      answerZh: '有，在这里。',
       accept: [['yes', 'yeah', 'yep', 'sure', 'here', 'have', 'do']]
     }
   ]
@@ -383,7 +388,12 @@ function speak(text, slow) {
   });
 }
 
-/* 识别：不连续、单次、让它自己结束；中间结果做兜底 */
+/* 识别：不连续、单次、让它自己结束；中间结果做兜底。
+   带看门狗：iOS 上识别会话有可能既不报错也不结束，没有超时就会永久卡住。 */
+let listening = false;
+let activeRec = null;
+let micBtn = null;
+
 function recognizeOnce() {
   return new Promise((resolve) => {
     if (!SR) { resolve({ ok: false, reason: 'no-api', text: '', errors: ['no-api'] }); return; }
@@ -393,12 +403,16 @@ function recognizeOnce() {
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
-    const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null };
+    const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null, stopped: false };
     let done = false;
+    let watch = null;
     const t0 = performance.now();
+
     const finish = (reason) => {
       if (done) return;
       done = true;
+      clearTimeout(watch);
+      if (activeRec === out) activeRec = null;
       out.reason = reason;
       const final = out.text || out.interim;
       out.text = final;
@@ -419,8 +433,31 @@ function recognizeOnce() {
     rec.onerror = (e) => { out.errors.push(e.error); };
     rec.onend = () => { finish('onend'); };
 
+    out.abort = (byUser) => {
+      if (byUser) out.stopped = true;
+      try { rec.abort(); } catch (e) { /* 已经结束就算了 */ }
+    };
+    activeRec = out;
+
+    watch = setTimeout(() => { out.abort(false); finish('watchdog'); }, 12000);
+
     try { rec.start(); } catch (e) { out.errors.push('start:' + e.name); finish('start-failed'); }
   });
+}
+
+function resetMic() {
+  if (!micBtn) return;
+  micBtn.disabled = false;
+  micBtn.classList.remove('on');
+  micBtn.textContent = '🎤 点一下开始说';
+}
+function setMicListening() {
+  if (!micBtn) return;
+  micBtn.classList.add('on');
+  micBtn.textContent = '🎤 正在听…点一下停止';
+}
+function stopListening() {
+  if (activeRec) activeRec.abort(true);
 }
 
 /* ============================================================
@@ -534,7 +571,8 @@ function startLevel() {
     attempts: 0,
     scores: [],
     react: [],
-    wrongSaid: [],
+    hard: {},
+    usedTrans: false,
     newWords: [],
     usedWords: {},
     busy: false
@@ -552,7 +590,10 @@ function renderNode() {
   $('nodeEn').textContent = n.en;
   $('nodeZh').textContent = n.zh;
   $('nodeZh').classList.add('hidden');
+  $('btnTrans').textContent = '译 翻译';
   $('feedback').innerHTML = '';
+  run.usedTrans = false;
+  run.attempts = 0;
 
   // 记账：这一节点涉及的词算"见过"
   (n.words || []).forEach((w) => {
@@ -594,33 +635,45 @@ function renderSpeak(n) {
       '<button id="btnAnswer">看标准答案</button>' +
     '</div>' +
     '<p class="hintline" id="hint">正常语速说就行，说完等一下</p>';
-  $('btnMic').onclick = () => doSpeak(n, false);
-  $('btnRetry').onclick = () => doSpeak(n, false);
+  micBtn = $('btnMic');
+  listening = false;
+  resetMic();
+  micBtn.onclick = () => {
+    if (listening) { stopListening(); return; }
+    doSpeak(n, false);
+  };
+  $('btnRetry').onclick = () => { if (!listening) doSpeak(n, false); };
   $('btnAnswer').onclick = () => revealAnswer(n);
 }
 
 async function doSpeak(n, isReading) {
-  if (run.busy) return;
+  if (run.busy || listening) return;
   run.busy = true;
-  const mic = $('btnMic');
   const hint = $('hint');
 
   // 关键：先掐掉语音合成，避免和识别抢音频会话（这是 iPhone 上 aborted 的教训）
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   await new Promise((r) => setTimeout(r, 350));
 
-  mic.classList.add('on');
-  mic.textContent = '🎤 正在听…';
-  hint.textContent = '请说：' + (n.answer ? n.answer : '');
+  listening = true;
+  setMicListening();
+  hint.textContent = '说一句完整的英文就行，说完等一下';
 
   const res = await recognizeOnce();
-  mic.classList.remove('on');
+  listening = false;
   run.busy = false;
+  resetMic();
+
+  if (res.stopped) { hint.textContent = '停了。准备好了再点一次。'; return; }
 
   const said = res.text || '';
   if (!said) {
     run.attempts++;
-    stepDown(n, '没听到你说话。' + (res.errors.length ? '（' + res.errors.join(', ') + '）' : '可能是网络或麦克风权限的问题，再试一次。'));
+    markHard(run.idx, '');
+    const why = res.errors.length
+      ? '（识别返回：' + res.errors.join(', ') + '）'
+      : (res.reason === 'watchdog' ? '（等了 12 秒没拿到声音）' : '');
+    stepDown(n, '没听到你说话。' + why);
     return;
   }
 
@@ -628,23 +681,30 @@ async function doSpeak(n, isReading) {
 
   const pass = judge(n.accept, said);
   if (pass) {
-    const score = run.attempts === 0 ? 100 : (run.attempts === 1 ? 70 : 50);
-    run.scores.push(isReading ? 30 : score);
+    let score = run.attempts === 0 ? 100 : (run.attempts === 1 ? 70 : 50);
+    if (run.usedTrans && score > 70) score = 70;
+    if (isReading) score = 30;
+    run.scores.push(score);
+    if (run.attempts > 0 || run.usedTrans) markHard(run.idx, '');
     $('feedback').innerHTML = '<div class="said"><b>通过了</b><p>' + esc(said) + '</p></div>';
     const w = (n.words || [])[0];
     if (w && S.vocab[w]) { S.vocab[w].streak++; saveState(); }
     run.busy = true;
-    mic.disabled = true;
+    if (micBtn) micBtn.disabled = true;
     setTimeout(nextNode, 1000);
   } else {
     run.attempts++;
-    run.wrongSaid.push(said);
+    markHard(run.idx, said);
     stepDown(n, '听到了：' + esc(said) + '　意思还差一点。');
   }
 }
 
+function markHard(i, said) {
+  if (!run.hard[i]) run.hard[i] = [];
+  if (said) run.hard[i].push(said);
+}
+
 function stepDown(n, msg) {
-  run.wrongSaid.push('__msg__' + msg);
   const tries = run.attempts;
   let html = '<div class="tip"><b>' + msg + '</b>';
   if (tries === 1) {
@@ -653,6 +713,7 @@ function stepDown(n, msg) {
     speak(n.en, true);
   } else if (tries === 2) {
     $('nodeZh').classList.remove('hidden');
+    $('btnTrans').textContent = '译 收起翻译';
     html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p></div>';
     $('feedback').innerHTML = html;
     speak(n.answer, true);
@@ -662,11 +723,26 @@ function stepDown(n, msg) {
 }
 
 function revealAnswer(n) {
+  markHard(run.idx, '');
   $('nodeZh').classList.remove('hidden');
+  $('btnTrans').textContent = '译 收起翻译';
   $('feedback').innerHTML =
-    '<div class="tip"><b>标准说法</b><p>' + esc(n.answer) + '</p></div>' +
+    '<div class="tip"><b>标准说法</b><p>' + esc(n.answer) + '</p>' +
+      '<div class="playrow" style="margin-top:10px">' +
+        '<button id="btnPlayAns">🔊 听一遍</button>' +
+        '<button id="btnTransAns">译 翻译</button>' +
+      '</div>' +
+      '<p id="ansZh" class="hidden" style="margin-top:8px">' + esc(n.answerZh || '') + '</p>' +
+    '</div>' +
     '<div class="actrow" style="margin-top:12px"><button id="btnShadow">🎤 跟着念一遍（算通过）</button></div>';
   speak(n.answer, true);
+  $('btnPlayAns').onclick = () => speak(n.answer, false);
+  $('btnTransAns').onclick = () => {
+    const zh = $('ansZh');
+    const willShow = zh.classList.contains('hidden');
+    zh.classList.toggle('hidden');
+    $('btnTransAns').textContent = willShow ? '译 收起翻译' : '译 翻译';
+  };
   const b = $('btnShadow');
   if (b) b.onclick = () => doSpeak(n, true);
 }
@@ -678,6 +754,8 @@ function esc(s) {
 function nextNode() {
   run.idx++;
   run.attempts = 0;
+  run.busy = false;
+  listening = false;
   if (run.idx >= LEVEL.nodes.length) finishLevel(); else renderNode();
 }
 
@@ -708,14 +786,19 @@ function finishLevel() {
   $('resWords').innerHTML = run.newWords.map(wordCard).join('');
   bindCards($('resWords'));
 
-  const bad = run.wrongSaid.filter((s) => !s.startsWith('__msg__'));
-  if (bad.length) {
+  const hardIdx = Object.keys(run.hard);
+  if (hardIdx.length) {
     $('resMistakeBox').classList.remove('hidden');
-    $('resMistakes').innerHTML =
-    '<div class="fixrow"><em>标准说法</em><p class="good">' +
-      esc(LEVEL.nodes.map((n) => n.answer).filter(Boolean).join('　/　')) + '</p></div>' +
-    '<div class="fixrow"><em>你刚才说的（识别到的原文）</em><p class="bad">' +
-      bad.map(esc).join('<br>') + '</p></div>';
+    $('resMistakes').innerHTML = hardIdx.map((i) => {
+      const n = LEVEL.nodes[Number(i)];
+      const said = run.hard[i].filter(Boolean);
+      return '<div class="fixrow">' +
+        '<em>第 ' + (Number(i) + 1) + ' 个节点 · 标准说法</em>' +
+        '<p class="good">' + esc(n.answer || n.en) + '</p>' +
+        (n.answerZh ? '<p class="muted" style="margin-top:2px">' + esc(n.answerZh) + '</p>' : '') +
+        (said.length ? '<em style="margin-top:8px">你刚才说的</em><p class="bad">' + said.map(esc).join('<br>') + '</p>' : '') +
+      '</div>';
+    }).join('');
   } else {
     $('resMistakeBox').classList.add('hidden');
   }
@@ -731,6 +814,13 @@ $('btnDex').onclick = renderDex;
 $('btnDexBack').onclick = renderHome;
 $('btnPlay').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, false);
 $('btnSlow').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, true);
+$('btnTrans').onclick = () => {
+  const zh = $('nodeZh');
+  const willShow = zh.classList.contains('hidden');
+  zh.classList.toggle('hidden');
+  if (willShow && run) run.usedTrans = true;
+  $('btnTrans').textContent = willShow ? '译 收起翻译' : '译 翻译';
+};
 
 window.addEventListener('orientationchange', () => window.scrollTo(0, 0));
 renderHome();
