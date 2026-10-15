@@ -3,227 +3,286 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>英语语音测试 v2</title>
+<title>英语闯关 · 样子图</title>
 <style>
-  :root { color-scheme: dark light; }
-  * { box-sizing: border-box; }
+  :root {
+    color-scheme: dark;
+    --bg: #0b0f16;
+    --panel: #141a24;
+    --panel2: #1b2330;
+    --line: #253044;
+    --text: #e7edf6;
+    --muted: #8d9bb0;
+    --amber: #f0b429;
+    --green: #4ec97f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
-    margin: 0; padding: 16px 16px 48px;
-    font: 17px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #10131a; color: #e9edf5;
+    margin: 0; padding: 14px 12px 60px;
+    font: 16px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
     -webkit-text-size-adjust: 100%;
   }
-  h1 { font-size: 21px; margin: 0 0 6px; }
-  h2 { font-size: 17px; margin: 0 0 8px; color: #9db4e0; }
-  .hint { color: #98a2b6; font-size: 14px; margin: 0 0 18px; }
-  section {
-    background: #171c26; border: 1px solid #232a38; border-radius: 12px;
-    padding: 14px; margin-bottom: 14px;
+  .banner {
+    max-width: 390px; margin: 0 auto 18px; padding: 12px 14px;
+    background: #2a2113; border: 1px solid #6b5320; border-radius: 12px;
+    color: #ffd98a; font-size: 14px;
   }
-  p { margin: 0 0 10px; font-size: 15px; color: #c2ccdd; }
-  b { color: #ffd479; }
-  button {
-    display: block; width: 100%; padding: 15px 14px; margin: 0 0 10px;
-    font-size: 16px; font-family: inherit; font-weight: 600;
-    color: #0d1117; background: #6fb1ff; border: 0; border-radius: 10px;
-    text-align: left;
+  .cap {
+    max-width: 390px; margin: 0 auto 8px;
+    font-size: 13px; color: var(--muted); letter-spacing: .02em;
   }
-  button:disabled { background: #3a465c; color: #8b97ab; }
-  button.sec { background: #2b3446; color: #cfd9ea; text-align: center; }
-  button.done { background: #4ec97f; }
-  pre {
-    margin: 0; padding: 10px; border-radius: 8px; background: #0d1117;
-    border: 1px solid #1e2532; color: #a9e6a0; font-size: 13px; line-height: 1.5;
-    white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Menlo, monospace;
-    min-height: 20px;
+  .phone {
+    max-width: 390px; margin: 0 auto 30px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+    overflow: hidden;
   }
+
+  /* 地图条 */
+  .map { position: relative; padding: 14px 10px 10px; background: #10161f; border-bottom: 1px solid var(--line); }
+  .map::before {
+    content: ""; position: absolute; left: 34px; right: 34px; top: 33px;
+    height: 3px; background: var(--line); border-radius: 2px;
+  }
+  .map::after {
+    content: ""; position: absolute; left: 34px; width: 96px; top: 33px;
+    height: 3px; background: var(--amber); border-radius: 2px;
+  }
+  .stops { position: relative; display: flex; }
+  .stop { flex: 1; text-align: center; font-size: 17px; }
+  .stop i {
+    display: block; width: 26px; height: 26px; margin: 0 auto 4px;
+    border-radius: 50%; background: var(--panel2); border: 2px solid var(--line);
+    font-style: normal; font-size: 13px; line-height: 22px;
+  }
+  .stop span { font-size: 11px; color: var(--muted); }
+  .stop.done i { background: var(--amber); border-color: var(--amber); color: #10161f; }
+  .stop.done span { color: var(--amber); }
+  .stop.now i { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(240,180,41,.18); }
+  .stop.now span { color: var(--text); font-weight: 600; }
+
+  /* 场景标题 */
+  .scene { padding: 12px 16px 4px; }
+  .scene b { display: block; font-size: 15px; }
+  .scene small { color: var(--muted); font-size: 12px; }
+
+  /* 对话 */
+  .talk { padding: 8px 16px 0; }
+  .who {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 20px; background: var(--panel2);
+    font-size: 12px; color: #cbd6e6; margin-bottom: 8px;
+  }
+  .who em { font-style: normal; color: var(--muted); }
+  .bubble {
+    background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 4px 14px 14px 14px; padding: 12px 14px; margin-bottom: 10px;
+  }
+  .en { font-size: 19px; line-height: 1.45; }
+  .zh { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .play {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; color: var(--amber);
+    background: rgba(240,180,41,.1); border: 1px solid rgba(240,180,41,.28);
+  }
+  .said {
+    border-left: 3px solid var(--green); padding: 8px 12px; margin: 12px 0;
+    background: rgba(78,201,127,.07); border-radius: 0 8px 8px 0;
+  }
+  .said b { color: var(--green); font-size: 12px; display: block; margin-bottom: 2px; }
+  .said p { margin: 0; font-size: 17px; }
+
+  /* 行动区 */
+  .act { padding: 14px 16px 18px; border-top: 1px solid var(--line); background: #10161f; }
+  .mic {
+    display: block; width: 100%; padding: 18px; border-radius: 14px;
+    background: linear-gradient(180deg,#f7c548,#e0a114); color: #171017;
+    font-size: 18px; font-weight: 700; text-align: center;
+  }
+  .row { display: flex; gap: 10px; margin-top: 10px; }
+  .row div {
+    flex: 1; text-align: center; padding: 11px; border-radius: 10px;
+    background: var(--panel2); border: 1px solid var(--line);
+    font-size: 14px; color: #cfd9ea;
+  }
+  .opts { margin: 0; padding: 0; list-style: none; }
+  .opts li {
+    padding: 13px 14px; border-radius: 10px; background: var(--panel2);
+    border: 1px solid var(--line); margin-bottom: 9px; font-size: 15px;
+  }
+  .opts li b { color: var(--amber); margin-right: 8px; }
+
+  /* 提示态 */
+  .tip {
+    border: 1px dashed #6b5320; background: #1d1a10; border-radius: 12px;
+    padding: 12px 14px; margin: 10px 0 0;
+  }
+  .tip b { color: var(--amber); font-size: 13px; }
+  .tip p { margin: 6px 0 0; font-size: 15px; color: #e4d5ae; }
+  .hearts { display: flex; gap: 5px; }
+  .hearts i { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); font-style: normal; }
+  .hearts i.off { background: #33405a; }
+
+  /* 结算 */
+  .score { text-align: center; padding: 22px 16px 6px; }
+  .score b { font-size: 46px; color: var(--amber); line-height: 1; }
+  .score small { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .drops { display: flex; gap: 10px; padding: 16px 16px 4px; }
+  .drop {
+    flex: 1; text-align: center; padding: 14px 8px; border-radius: 12px;
+    background: var(--panel2); border: 1px solid var(--line);
+  }
+  .drop b { display: block; font-size: 24px; }
+  .drop span { font-size: 11px; color: var(--muted); }
+  .fix { padding: 16px; }
+  .fix h4 { margin: 0 0 10px; font-size: 14px; color: #9db4e0; }
+  .fixrow {
+    background: #10161f; border: 1px solid var(--line); border-radius: 10px;
+    padding: 11px 13px; margin-bottom: 9px;
+  }
+  .fixrow em { font-style: normal; font-size: 11px; color: var(--muted); display: block; }
+  .fixrow p { margin: 2px 0 0; font-size: 16px; }
+  .fixrow .bad { color: #ff8f8f; }
+  .fixrow .good { color: var(--green); }
+  .again {
+    margin: 4px 16px 20px; padding: 15px; text-align: center; border-radius: 12px;
+    background: var(--panel2); border: 1px solid var(--amber); color: var(--amber);
+    font-weight: 700;
+  }
+
+  .notes {
+    max-width: 390px; margin: 0 auto; padding: 16px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    font-size: 14px; color: #b9c6d8;
+  }
+  .notes h3 { margin: 0 0 8px; font-size: 15px; color: var(--text); }
+  .notes ul { margin: 0; padding-left: 18px; }
+  .notes li { margin-bottom: 6px; }
 </style>
 </head>
 <body>
 
-<h1>英语语音测试 v2</h1>
-<p class="hint">上一版在 iPhone 上抓到了正确的中间结果（置信度 0.98），但会话中途报 aborted。这一版专门找出哪一组配置能跑完整。</p>
+<div class="banner">
+  <b>这是样子图（静态）</b><br>
+  只有排版和文字，点不动、不会说话、没有逻辑。你看的是"长什么样、顺不顺手"。
+</div>
 
-<section>
-  <h2>怎么测</h2>
-  <p>下面 4 个按钮，<b>每个点一次</b>。每次点完等大约 1 秒，再说同一句话：</p>
-  <p><b>I would like a large coffee, please.</b></p>
-  <p>说完就停，别再操作，让它自己结束（最多 12 秒）。某组报错也没关系，接着试下一组。</p>
-</section>
+<p class="cap">第 1 屏 · 关卡进行中（开口说）</p>
+<div class="phone">
+  <div class="map">
+    <div class="stops">
+      <div class="stop done"><i>1</i><span>落地</span></div>
+      <div class="stop now"><i>2</i><span>海关</span></div>
+      <div class="stop"><i>3</i><span>行李</span></div>
+      <div class="stop"><i>4</i><span>出口</span></div>
+      <div class="stop"><i>5</i><span>打车</span></div>
+    </div>
+  </div>
 
-<section>
-  <h2>配置测试</h2>
-  <button data-cfg="A">A · 不连续 + 要中间结果　（复现上一版）</button>
-  <button data-cfg="B">B · 连续 + 要中间结果</button>
-  <button data-cfg="C">C · 不连续 + 只要最终结果</button>
-  <button data-cfg="D">D · 连续 + 只要最终结果</button>
-  <button id="stopBtn" class="sec">手动停止当前识别</button>
-  <pre id="log">等待测试…</pre>
-</section>
+  <div class="scene">
+    <b>关西机场 · 入境审查</b>
+    <small>第 2 站 · 第 3 个节点（共 5 个）</small>
+  </div>
 
-<section>
-  <h2>报告</h2>
-  <p>四组都试完后，点下面的按钮复制，发我。</p>
-  <button id="copyBtn" class="sec">复制报告</button>
-  <pre id="report">—</pre>
-</section>
+  <div class="talk">
+    <div class="who">🛂 海关官员 <em>· Officer Chen</em></div>
+    <div class="bubble">
+      <div class="en">What's the purpose of your visit?</div>
+      <div class="zh">你这次来的目的是什么？</div>
+      <div class="play">🔊 听一遍（可调慢速）</div>
+    </div>
 
-<script>
-'use strict';
+    <div class="said">
+      <b>你说的</b>
+      <p>Sightseeing.</p>
+    </div>
+  </div>
 
-const R = { env: {}, runs: {}, errors: [] };
-const $ = (id) => document.getElementById(id);
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  <div class="act">
+    <div class="mic">🎤 按住说话</div>
+    <div class="row">
+      <div>再说一次</div>
+      <div>提示</div>
+    </div>
+  </div>
+</div>
 
-const CONFIGS = {
-  A: { continuous: false, interimResults: true,  label: '不连续+中间结果' },
-  B: { continuous: true,  interimResults: true,  label: '连续+中间结果' },
-  C: { continuous: false, interimResults: false, label: '不连续+只最终' },
-  D: { continuous: true,  interimResults: false, label: '连续+只最终' }
-};
+<p class="cap">第 2 屏 · 卡住了（提示态，跟读也算过）</p>
+<div class="phone">
+  <div class="map">
+    <div class="stops">
+      <div class="stop done"><i>1</i><span>落地</span></div>
+      <div class="stop now"><i>2</i><span>海关</span></div>
+      <div class="stop"><i>3</i><span>行李</span></div>
+      <div class="stop"><i>4</i><span>出口</span></div>
+      <div class="stop"><i>5</i><span>打车</span></div>
+    </div>
+  </div>
 
-const ua = navigator.userAgent;
-R.env = {
-  浏览器: ua,
-  安全上下文: String(window.isSecureContext),
-  微信内置: /MicroMessenger/i.test(ua) ? '是' : '否',
-  语音识别API: SR ? '有' : '没有',
-  iOS版本: (ua.match(/OS (\d+)[._](\d+)/) || []).slice(1).join('.') || '未知'
-};
+  <div class="scene">
+    <b>关西机场 · 入境审查</b>
+    <small>本节点已经试了 2 次</small>
+  </div>
 
-let active = null;
-let capTimer = null;
+  <div class="talk">
+    <div class="who">🛂 海关官员 <em>· Officer Chen</em></div>
+    <div class="bubble">
+      <div class="en">What's the purpose of your visit?</div>
+      <div class="play">🔊 慢速重播</div>
+    </div>
 
-function log(text) { $('log').textContent = text; }
+    <div class="tip">
+      <b>句型给你搭好了</b>
+      <p>I'm here for ___ .<br>可以填：sightseeing / business / a holiday</p>
+    </div>
+  </div>
 
-function finish(cfg, run, reason) {
-  if (run.done) return;
-  run.done = true;
-  run.reason = reason;
-  run.ms = Math.round(performance.now() - run.t0);
-  clearTimeout(capTimer);
-  active = null;
-  const btn = document.querySelector('button[data-cfg="' + cfg + '"]');
-  if (btn) { btn.disabled = false; btn.classList.add('done'); }
-  R.runs[cfg] = run;
-  log('配置 ' + cfg + ' 结束\n' +
-      '触发结束的原因：' + reason + '\n' +
-      '用时：' + run.ms + 'ms\n' +
-      '中间结果：' + (run.interim.join(' / ') || '无') + '\n' +
-      '最终结果：' + (run.final.join(' / ') || '无') + '\n' +
-      '错误：' + (run.errors.join(', ') || '无'));
-}
+  <div class="act">
+    <div class="mic">🎤 跟着念一遍也算过</div>
+    <div class="row">
+      <div>看标准答案</div>
+      <div>跳过这关</div>
+    </div>
+  </div>
+</div>
 
-function runConfig(cfg) {
-  if (!SR) { log('这个浏览器没有语音识别接口'); return; }
-  if (active) { log('上一组还没结束，等一下再点'); return; }
+<p class="cap">第 3 屏 · 结算（学习真正发生的地方）</p>
+<div class="phone">
+  <div class="score">
+    <b>88</b>
+    <small>本关得分 · 平均反应 1.8 秒</small>
+  </div>
 
-  const c = CONFIGS[cfg];
-  const btn = document.querySelector('button[data-cfg="' + cfg + '"]');
-  btn.disabled = true;
-  const state = { cfg: cfg, label: c.label, t0: performance.now(), interim: [], final: [], errors: [], done: false, reason: '', ms: 0 };
-  active = state;
+  <div class="drops">
+    <div class="drop"><b>🏅</b><span>ARRIVAL 章</span></div>
+    <div class="drop"><b>6</b><span>个新词进图鉴</span></div>
+    <div class="drop"><b>2</b><span>句要重练</span></div>
+  </div>
 
-  let rec;
-  try {
-    rec = new SR();
-  } catch (e) {
-    state.errors.push('构造异常:' + e.message);
-    finish(cfg, state, '构造失败');
-    return;
-  }
-  state.rec = rec;
+  <div class="fix">
+    <h4>这两句说错了，明天先复习它们</h4>
+    <div class="fixrow">
+      <em>标准说法</em>
+      <p class="good">I'm here for sightseeing.</p>
+    </div>
+    <div class="fixrow">
+      <em>你刚才说的</em>
+      <p class="bad">I am sightseeing here.</p>
+    </div>
+  </div>
 
-  rec.lang = 'en-US';
-  rec.continuous = c.continuous;
-  rec.interimResults = c.interimResults;
-  rec.maxAlternatives = 1;
+  <div class="again">🔁 重打这两句</div>
+</div>
 
-  rec.onstart = () => { log('🎤 配置 ' + cfg + '：开始识别，请说：I would like a large coffee, please.'); };
-  rec.onspeechstart = () => { log('听到声音了，继续说…'); };
-  rec.onspeechend = () => { log('检测到你停下了，等结果…'); };
-  rec.onaudiostart = () => { state.audioStart = Math.round(performance.now() - state.t0); };
-  rec.onsoundstart = () => { state.soundStart = Math.round(performance.now() - state.t0); };
+<div class="notes">
+  <h3>这一版里没有的东西</h3>
+  <ul>
+    <li>对话不会真的说话（正式版会念出来，可以调慢速）</li>
+    <li>「按住说话」不会录音、不会判分（正式版用你测过的 C 配置）</li>
+    <li>地图不会动（正式版过关会亮起下一格）</li>
+    <li>没有背景图，只有排版——每一分钱都花在学习交互上</li>
+  </ul>
+</div>
 
-  rec.onresult = (e) => {
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const r = e.results[i];
-      const text = r[0].transcript.trim();
-      const conf = r[0].confidence ? r[0].confidence.toFixed(2) : '无';
-      if (r.isFinal) { state.final.push(text + '(置信度 ' + conf + ')'); }
-      else { state.interim.push(text + '(置信度 ' + conf + ')'); }
-    }
-    log('配置 ' + cfg + ' 进行中…\n中间：' + (state.interim.slice(-1)[0] || '无'));
-  };
-
-  rec.onerror = (e) => {
-    state.errors.push(e.error);
-    R.errors.push(cfg + ':' + e.error);
-  };
-
-  rec.onend = () => { finish(cfg, state, 'onend（引擎自己结束）'); };
-
-  capTimer = setTimeout(() => {
-    if (active === state && !state.done) {
-      try { rec.stop(); } catch (err) { finish(cfg, state, 'auto-stop 且 stop() 抛错:' + err.name); }
-    }
-  }, 12000);
-
-  try {
-    rec.start();
-  } catch (e) {
-    state.errors.push('start异常:' + e.name);
-    finish(cfg, state, 'start() 抛错');
-  }
-}
-
-document.querySelectorAll('button[data-cfg]').forEach((b) => {
-  b.onclick = () => runConfig(b.dataset.cfg);
-});
-
-$('stopBtn').onclick = () => {
-  if (!active) { log('当前没有在识别'); return; }
-  const r = active;
-  try { r.rec.stop(); } catch (e) { finish(r.cfg, r, '手动停止抛错:' + e.name); }
-  log('已请求手动停止…');
-};
-
-function buildReport() {
-  const lines = ['=== 英语语音测试 v2 报告 ===', '', '[环境]'];
-  for (const [k, v] of Object.entries(R.env)) lines.push(k + '：' + v);
-  lines.push('', '[四组配置结果]');
-  ['A', 'B', 'C', 'D'].forEach((cfg) => {
-    const r = R.runs[cfg];
-    if (!r) { lines.push(cfg + '（' + CONFIGS[cfg].label + '）：未测'); return; }
-    lines.push(cfg + '（' + r.label + '）');
-    lines.push('  结束原因：' + r.reason + '　用时：' + r.ms + 'ms' +
-      (r.audioStart !== undefined ? '　音频开始：' + r.audioStart + 'ms' : '') +
-      (r.soundStart !== undefined ? '　检测到说话：' + r.soundStart + 'ms' : ''));
-    lines.push('  中间结果：' + (r.interim.join(' / ') || '无'));
-    lines.push('  最终结果：' + (r.final.join(' / ') || '无'));
-    lines.push('  错误：' + (r.errors.join(', ') || '无'));
-  });
-  return lines.join('\n');
-}
-function refresh() { $('report').textContent = buildReport(); }
-setInterval(refresh, 1000);
-
-$('copyBtn').onclick = async () => {
-  const txt = buildReport();
-  try {
-    await navigator.clipboard.writeText(txt);
-    $('copyBtn').textContent = '✅ 已复制，去微信粘贴发我';
-  } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = txt; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); $('copyBtn').textContent = '✅ 已复制（备用方式）'; }
-    catch (e2) { $('copyBtn').textContent = '复制失败，请长按上面文字手动选中'; }
-    document.body.removeChild(ta);
-  }
-  setTimeout(() => { $('copyBtn').textContent = '复制报告'; }, 4000);
-};
-
-refresh();
-</script>
 </body>
 </html>
