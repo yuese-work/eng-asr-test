@@ -61,12 +61,6 @@
     <line x1="750" y1="96" x2="750" y2="420"/>
   </g>
 
-  <!-- 后方指示牌（无文字，只留形状） -->
-  <rect x="620" y="118" width="190" height="46" rx="6" fill="#1a2534" stroke="#2a3b52" stroke-width="2"/>
-  <circle cx="648" cy="141" r="9" fill="#4ec97f" opacity=".75"/>
-  <rect x="668" y="134" width="118" height="7" rx="3.5" fill="#33465e"/>
-  <rect x="668" y="147" width="76" height="6" rx="3" fill="#2b3b50"/>
-
   <!-- 玻璃隔断 -->
   <rect x="258" y="138" width="384" height="26" rx="6" fill="#0b121c" stroke="#2b4058" stroke-width="2"/>
   <rect x="266" y="146" width="90" height="5" rx="2.5" fill="#f0b429" opacity=".55"/>
