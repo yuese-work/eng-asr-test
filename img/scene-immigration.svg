@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#142033"/>
+      <stop offset="1" stop-color="#0a1018"/>
+    </linearGradient>
+    <linearGradient id="ceiling" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1119"/>
+      <stop offset="1" stop-color="#131c29"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3d5f86" stop-opacity=".55"/>
+      <stop offset=".5" stop-color="#24374e" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#4a7099" stop-opacity=".45"/>
+    </linearGradient>
+    <linearGradient id="counterTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b4763"/>
+      <stop offset="1" stop-color="#1d3349"/>
+    </linearGradient>
+    <linearGradient id="counterFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16283a"/>
+      <stop offset="1" stop-color="#0d1723"/>
+    </linearGradient>
+    <radialGradient id="lampGlow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#f0b429" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#f0b429" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx=".5" cy=".35" r=".6">
+      <stop offset="0" stop-color="#f7c548" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#f7c548" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <linearGradient id="passport" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7d2b38"/>
+      <stop offset="1" stop-color="#4f1a25"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 房间 -->
+  <rect width="900" height="600" fill="url(#wall)"/>
+  <rect width="900" height="96" fill="url(#ceiling)"/>
+
+  <!-- 顶灯 -->
+  <g>
+    <ellipse cx="190" cy="52" rx="150" ry="52" fill="url(#lampGlow)"/>
+    <ellipse cx="450" cy="52" rx="170" ry="56" fill="url(#lampGlow)"/>
+    <ellipse cx="710" cy="52" rx="150" ry="52" fill="url(#lampGlow)"/>
+    <rect x="128" y="46" width="124" height="11" rx="5.5" fill="#f0b429" opacity=".92"/>
+    <rect x="388" y="46" width="124" height="11" rx="5.5" fill="#f0b429" opacity=".92"/>
+    <rect x="648" y="46" width="124" height="11" rx="5.5" fill="#f0b429" opacity=".92"/>
+  </g>
+
+  <!-- 后墙板缝 -->
+  <g stroke="#1d2a3d" stroke-width="2" opacity=".8">
+    <line x1="150" y1="96" x2="150" y2="420"/>
+    <line x1="300" y1="96" x2="300" y2="420"/>
+    <line x1="600" y1="96" x2="600" y2="420"/>
+    <line x1="750" y1="96" x2="750" y2="420"/>
+  </g>
+
+  <!-- 后方指示牌（无文字，只留形状） -->
+  <rect x="620" y="118" width="190" height="46" rx="6" fill="#1a2534" stroke="#2a3b52" stroke-width="2"/>
+  <circle cx="648" cy="141" r="9" fill="#4ec97f" opacity=".75"/>
+  <rect x="668" y="134" width="118" height="7" rx="3.5" fill="#33465e"/>
+  <rect x="668" y="147" width="76" height="6" rx="3" fill="#2b3b50"/>
+
+  <!-- 玻璃隔断 -->
+  <rect x="258" y="138" width="384" height="26" rx="6" fill="#0b121c" stroke="#2b4058" stroke-width="2"/>
+  <rect x="266" y="146" width="90" height="5" rx="2.5" fill="#f0b429" opacity=".55"/>
+  <rect x="268" y="150" width="364" height="272" rx="8" fill="#0c1420" opacity=".55"/>
+  <rect x="268" y="150" width="364" height="272" rx="8" fill="url(#glass)"/>
+  <rect x="268" y="150" width="364" height="272" rx="8" fill="none" stroke="#3d5877" stroke-width="3" opacity=".85"/>
+  <g opacity=".16" fill="#ffffff">
+    <polygon points="300,150 344,150 288,422 244,422"/>
+    <polygon points="392,150 410,150 354,422 336,422"/>
+    <polygon points="560,150 582,150 526,422 504,422"/>
+  </g>
+
+  <!-- 传声孔 -->
+  <rect x="400" y="372" width="100" height="30" rx="15" fill="#0a121c" stroke="#2f4661" stroke-width="2"/>
+  <g stroke="#233650" stroke-width="3" stroke-linecap="round">
+    <line x1="418" y1="380" x2="418" y2="394"/>
+    <line x1="432" y1="380" x2="432" y2="394"/>
+    <line x1="446" y1="380" x2="446" y2="394"/>
+    <line x1="460" y1="380" x2="460" y2="394"/>
+    <line x1="474" y1="380" x2="474" y2="394"/>
+  </g>
+
+  <!-- 官员 -->
+  <g>
+    <!-- 肩与制服 -->
+    <path d="M356 420 L360 330 Q368 296 402 288 L498 288 Q532 296 540 330 L544 420 Z" fill="#22405f"/>
+    <path d="M356 420 L360 330 Q368 296 402 288 L450 288 L450 420 Z" fill="#2a4b6e"/>
+    <!-- 领口 -->
+    <path d="M418 292 L450 330 L482 292 L470 288 L450 312 L430 288 Z" fill="#e8eef6" opacity=".9"/>
+    <!-- 肩章 -->
+    <rect x="366" y="338" width="52" height="12" rx="4" fill="#f0b429" opacity=".8" transform="rotate(-8 392 344)"/>
+    <rect x="482" y="338" width="52" height="12" rx="4" fill="#f0b429" opacity=".8" transform="rotate(8 508 344)"/>
+    <!-- 胸牌 -->
+    <rect x="462" y="368" width="40" height="24" rx="4" fill="#e8eef6" opacity=".85"/>
+    <rect x="468" y="374" width="28" height="4" rx="2" fill="#2a4b6e" opacity=".6"/>
+    <rect x="468" y="382" width="18" height="4" rx="2" fill="#2a4b6e" opacity=".4"/>
+    <!-- 脖子 -->
+    <rect x="430" y="262" width="40" height="38" rx="14" fill="#c99a72"/>
+    <!-- 头 -->
+    <ellipse cx="450" cy="226" rx="46" ry="52" fill="#d9ab80"/>
+    <!-- 耳 -->
+    <ellipse cx="404" cy="228" rx="9" ry="13" fill="#c99a72"/>
+    <ellipse cx="496" cy="228" rx="9" ry="13" fill="#c99a72"/>
+    <!-- 鬓发 -->
+    <path d="M404 214 Q406 188 418 182 L418 200 Q410 204 408 218 Z" fill="#1c2431"/>
+    <path d="M496 214 Q494 188 482 182 L482 200 Q490 204 492 218 Z" fill="#1c2431"/>
+    <!-- 制服帽 -->
+    <path d="M400 202 Q402 166 450 162 Q498 166 500 202 Z" fill="#1b2a3f"/>
+    <rect x="394" y="196" width="112" height="15" rx="5" fill="#16233a"/>
+    <ellipse cx="450" cy="212" rx="60" ry="11" fill="#0e1727"/>
+    <ellipse cx="450" cy="209" rx="60" ry="8" fill="#1a2a41"/>
+    <rect x="436" y="197" width="28" height="7" rx="2" fill="#f0b429" opacity=".8"/>
+    <!-- 眉毛 -->
+    <path d="M424 216 Q432 211 441 215" stroke="#1c2431" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M459 215 Q468 211 476 216" stroke="#1c2431" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- 眼 -->
+    <ellipse cx="432" cy="228" rx="4.5" ry="5" fill="#121820"/>
+    <ellipse cx="468" cy="228" rx="4.5" ry="5" fill="#121820"/>
+    <!-- 鼻 -->
+    <path d="M450 232 L450 244 Q450 248 446 248" stroke="#b98a63" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- 嘴 -->
+    <path d="M437 258 Q450 262 463 258" stroke="#a9714f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- 暖光 -->
+  <rect width="900" height="600" fill="url(#warm)"/>
+
+  <!-- 柜台 -->
+  <polygon points="60,420 840,420 900,478 0,478" fill="url(#counterTop)"/>
+  <polygon points="0,478 900,478 900,600 0,600" fill="url(#counterFace)"/>
+  <line x1="60" y1="420" x2="0" y2="478" stroke="#5b7c9e" stroke-width="3" opacity=".55"/>
+  <line x1="840" y1="420" x2="900" y2="478" stroke="#5b7c9e" stroke-width="3" opacity=".55"/>
+  <rect x="0" y="476" width="900" height="4" fill="#f0b429" opacity=".28"/>
+
+  <!-- 前景：举着的护照（前臂从画面下方进入，不做手指细节） -->
+  <g transform="rotate(-7 200 470)">
+    <!-- 前臂 -->
+    <path d="M150 640 L138 500 Q136 470 168 466 L246 466 Q276 470 274 502 L268 640 Z" fill="#c99a72"/>
+    <!-- 护照本体 -->
+    <rect x="104" y="286" width="176" height="260" rx="11" fill="url(#passport)"/>
+    <rect x="113" y="295" width="158" height="242" rx="8" fill="none" stroke="#c9a86a" stroke-width="2" opacity=".5"/>
+    <!-- 内页边缘 -->
+    <rect x="266" y="300" width="14" height="232" rx="6" fill="#e9e2d2"/>
+    <rect x="271" y="306" width="9" height="220" rx="4" fill="#cfc5b0"/>
+    <!-- 金色徽记 -->
+    <circle cx="192" cy="386" r="30" fill="none" stroke="#c9a86a" stroke-width="3" opacity=".9"/>
+    <ellipse cx="192" cy="386" rx="13" ry="30" fill="none" stroke="#c9a86a" stroke-width="2.5" opacity=".7"/>
+    <line x1="162" y1="386" x2="222" y2="386" stroke="#c9a86a" stroke-width="2.5" opacity=".7"/>
+  </g>
+
+  <!-- 暗角 -->
+  <rect width="900" height="600" fill="url(#vignette)"/>
+</svg>
