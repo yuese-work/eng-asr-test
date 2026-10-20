@@ -44,6 +44,10 @@
   .muted { color:var(--muted); font-size:13px; }
 
   .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+
+  /* 场景图：只交代"你在哪"，不提供任何答案信息 */
+  .sceneimg { height:158px; overflow:hidden; background:#0d131d; border-bottom:1px solid var(--line); }
+  .sceneimg img { display:block; width:100%; height:100%; object-fit:cover; object-position:50% 55%; }
   .stat { display:flex; gap:12px; }
   .stat div { flex:1; text-align:center; padding:12px 6px; background:var(--panel2); border-radius:10px; }
   .stat b { display:block; font-size:22px; color:var(--amber); line-height:1.2; }
@@ -152,6 +156,9 @@
   <!-- ============ 关卡 ============ -->
   <div id="screenNode" class="hidden">
     <div class="map" id="mapNode"></div>
+    <div class="sceneimg">
+      <img src="img/scene-immigration.png" alt="海关柜台：你举着护照，玻璃后面是穿制服的海关官员">
+    </div>
     <div class="scene">
       <b id="nodeScene">关西机场 · 入境审查</b>
       <small id="nodeProgress">第 1 / 5 个节点</small>
