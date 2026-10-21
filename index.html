@@ -104,6 +104,14 @@
   .drop { flex:1; text-align:center; padding:14px 6px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); }
   .drop b { display:block; font-size:24px; }
   .drop span { font-size:11px; color:var(--muted); }
+  .lvrow { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; margin-bottom:8px; }
+  .lvrow i { font-style:normal; width:24px; height:24px; border-radius:50%; background:#2a3a52; color:#cfd9ea; font-size:13px; text-align:center; line-height:24px; flex:none; }
+  .lvrow.done i { background:var(--amber); color:#10161f; }
+  .lvrow.locked { opacity:.45; }
+  .lvrow div { flex:1; min-width:0; }
+  .lvrow b { display:block; font-size:14px; }
+  .lvrow span { font-size:11px; color:var(--muted); }
+  .lvrow em { font-style:normal; font-size:12px; color:var(--amber); }
   .fixrow { background:#10161f; border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:9px; }
   .fixrow em { font-style:normal; font-size:11px; color:var(--muted); display:block; }
   .fixrow p { margin:2px 0 0; font-size:16px; }
@@ -148,6 +156,11 @@
         <p class="muted" style="margin-top:12px">四级大纲 <b id="statTotal">4615</b> 词 · 已收集 <b id="statWords2">0</b></p>
       </div>
 
+      <div class="card">
+        <h2>关卡</h2>
+        <div id="levelList"></div>
+      </div>
+
       <button class="btn" id="btnStart">开始第 2 站 · 入境审查</button>
       <button class="btn ghost" id="btnDex">词汇图鉴（<span id="dexCount">0</span>）</button>
     </div>
@@ -157,7 +170,7 @@
   <div id="screenNode" class="hidden">
     <div class="map" id="mapNode"></div>
     <div class="sceneimg">
-      <img src="img/scene-immigration.png" alt="海关柜台：你举着护照，玻璃后面是穿制服的海关官员">
+      <img id="sceneImg" src="img/scene-immigration.png" alt="场景图">
     </div>
     <div class="scene">
       <b id="nodeScene">关西机场 · 入境审查</b>
@@ -253,16 +266,47 @@ const WORDS = {
   form:         { ipa:'[fɔːm]',            def:'n. 形式；表格　vt. 形成', eg:'Please fill in this form.' },
   holiday:      { ipa:'[ˈhɔlidei]',        def:'n. 假日，节日；假期',  eg:"I'm here on holiday." },
   journey:      { ipa:'[ˈdʒəːni]',         def:'n. 旅行，旅程',        eg:'How was your journey?' },
+  bag:          { ipa:'[bæg]',             def:'n. 袋，包，背包',      eg:"It's a big black bag." },
+  tag:          { ipa:'[tæg]',             def:'n. 附加语；标签',      eg:'Can I see your baggage tag?' },
+  claim:        { ipa:'[kleim]',           def:'vt. 声称，主张；索取',  eg:'Do you have your baggage claim tag?' },
+  missing:      { ipa:'[ˈmisiŋ]',          def:'a. 缺掉的，失去的',    eg:'My bag is missing.' },
+  lose:         { ipa:'[luːz]',            def:'vt. 失去；迷失；输掉',  eg:'I lost my bag.' },
+  damage:       { ipa:'[ˈdæmidʒ]',         def:'vt. 损害，毁坏　n. 损害', eg:'My bag was damaged.' },
+  weight:       { ipa:'[weit]',            def:'n. 重；砝码；重担',    eg:'What is the weight of your bag?' },
+  size:         { ipa:'[saiz]',            def:'n. 大小；体积；尺码',  eg:'What size is your bag?' },
+  describe:     { ipa:'[disˈkraib]',       def:'vt. 形容；描写，描绘',  eg:'Can you describe your bag?' },
+  black:        { ipa:'[blæk]',            def:'a. 黑色的；黑暗的',    eg:"It's a big black bag." },
+  blue:         { ipa:'[bluː]',            def:'a. 蓝色的　n. 蓝色',    eg:"It's a small blue bag." },
+  red:          { ipa:'[red]',             def:'a. 红色的　n. 红色',    eg:'I have a red bag.' },
+  large:        { ipa:'[lɑːdʒ]',           def:'a. 大的；巨大的',      eg:'It is a large bag.' },
+  big:          { ipa:'[big]',             def:'a. 大的，巨大的',      eg:"It's a big black bag." },
+  small:        { ipa:'[smɔːl]',           def:'a. 小的，少的；小型的', eg:"It's a small blue bag." },
+  handle:       { ipa:'[ˈhændl]',          def:'n. 柄，把手　vt. 拿，触', eg:'It has a red handle.' },
+  label:        { ipa:'[ˈleibl]',          def:'n. 标签；标记，符号',  eg:'There is a label on my bag.' },
+  notice:       { ipa:'[ˈnəutis]',         def:'vt. 注意　n. 通知；注意', eg:'Did you notice the notice?' },
+  announce:     { ipa:'[əˈnauns]',         def:'vt. 宣布，宣告，发表',  eg:'They announced the belt number.' },
+  belt:         { ipa:'[belt]',            def:'n. 带，腰带；皮带；区', eg:'Your bags are on belt three.' },
+  service:      { ipa:'[ˈsəːvis]',         def:'n. 服务；行政部门',    eg:'Please go to the service desk.' },
+  help:         { ipa:'[help]',            def:'vt. 帮助；援助　n. 帮手', eg:'Can I help you?' },
+  report:       { ipa:'[riˈpɔːt]',         def:'vt.&vi. 报告；汇报',   eg:'I want to report a missing bag.' },
+  airline:      { ipa:'[ˈeəlain]',         def:'n. 航空公司；航线',    eg:'Which airline are you flying?' },
+  customer:     { ipa:'[ˈkʌstəmə]',        def:'n. 顾客，主顾',        eg:'The customer is waiting at the desk.' },
+  heavy:        { ipa:'[ˈhiːvi]',          def:'a. 重的；大的',        eg:'My bag is heavy.' },
 };
 
 /* ============================================================
    1. 关卡数据
    ============================================================ */
-const LEVEL = {
+const STOPS = ['落地', '海关', '行李', '出口', '打车'];
+
+const LEVELS = [
+{
   id: 'l1',
   scene: '关西机场 · 入境审查',
-  stops: ['落地', '海关', '行李', '出口', '打车'],
   at: 1,
+  img: 'img/scene-immigration.png',
+  badge: 'ARRIVAL 章',
+  extraWords: ['officer', 'luggage', 'baggage', 'declare', 'security', 'check', 'information', 'occupation', 'passenger'],
   nodes: [
     {
       kind: 'choice',
@@ -325,7 +369,78 @@ const LEVEL = {
       accept: [['yes', 'yeah', 'yep', 'sure', 'here', 'have', 'do']]
     }
   ]
-};
+},
+{
+  id: 'l2',
+  scene: '关西机场 · 行李提取',
+  at: 2,
+  img: 'img/scene-baggage.png',
+  badge: 'BAGGAGE 章',
+  extraWords: ['damage', 'red', 'big', 'notice', 'airline', 'heavy'],
+  nodes: [
+    {
+      kind: 'choice',
+      who: '📢 机场广播 · Announcement',
+      en: 'Passengers on flight CA123, your bags are on belt three.',
+      zh: '乘坐 CA123 航班的旅客，您的行李在 3 号传送带。',
+      words: ['flight', 'bag', 'baggage', 'belt', 'announce'],
+      options: [
+        { text: '去 3 号传送带', ok: true },
+        { text: '去 5 号传送带', ok: false },
+        { text: '去问询处', ok: false }
+      ]
+    },
+    {
+      kind: 'speak',
+      who: '🧳 行李区工作人员 · Staff',
+      en: 'Can I see your baggage tag?',
+      zh: '能给我看一下你的行李牌吗？',
+      words: ['baggage', 'tag', 'label', 'claim'],
+      frame: 'Sure, ___ .',
+      frameFill: '可以填：here it is / here you go',
+      answer: 'Sure, here it is.',
+      answerZh: '当然，在这里。',
+      accept: [['here', 'tag', 'sure', 'okay', 'ok']]
+    },
+    {
+      kind: 'speak',
+      who: '🧳 行李区工作人员 · Staff',
+      en: 'Can I help you?',
+      zh: '需要帮忙吗？',
+      words: ['help', 'service', 'missing', 'lose', 'report'],
+      frame: 'My bag is ___ .',
+      frameFill: '可以填：missing / lost / not here',
+      answer: 'My bag is missing.',
+      answerZh: '我的行李不见了。',
+      accept: [['missing', 'lost', 'lose', 'arrive', 'come', 'came']]
+    },
+    {
+      kind: 'speak',
+      who: '🧳 行李区工作人员 · Staff',
+      en: 'What does your bag look like?',
+      zh: '你的行李长什么样？',
+      words: ['describe', 'bag', 'black', 'blue', 'large', 'small', 'handle', 'weight', 'size'],
+      frame: "It's a ___ .",
+      frameFill: '可以填：big black bag / small blue bag',
+      answer: "It's a big black bag.",
+      answerZh: '是一个黑色的大包。',
+      accept: [['black', 'blue', 'red', 'grey', 'gray', 'green', 'white', 'brown', 'big', 'small', 'large', 'heavy']]
+    },
+    {
+      kind: 'speak',
+      who: '🧳 行李区工作人员 · Staff',
+      en: 'Would you like us to send it to your hotel?',
+      zh: '要我们把它送到你的酒店吗？',
+      words: ['help', 'service', 'report', 'customer'],
+      frame: 'Yes, ___ .',
+      frameFill: '可以填：please / that would be great',
+      answer: 'Yes, please.',
+      answerZh: '好的，麻烦了。',
+      accept: [['yes', 'yeah', 'sure', 'please', 'great']]
+    }
+  ]
+}
+];
 
 /* ============================================================
    2. 存档
@@ -504,7 +619,7 @@ function show(id) {
   window.scrollTo(0, 0);
 }
 function renderMap(el, at) {
-  el.innerHTML = '<div class="stops">' + LEVEL.stops.map((name, i) => {
+  el.innerHTML = '<div class="stops">' + STOPS.map((name, i) => {
     const cls = i < at ? 'done' : (i === at ? 'now' : '');
     const mark = i < at ? '✓' : (i + 1);
     return '<div class="stop ' + cls + '"><i>' + mark + '</i><span>' + name + '</span></div>';
@@ -552,16 +667,53 @@ function bindCards(root) {
    ============================================================ */
 function collected() { return Object.keys(S.vocab).length; }
 
+function sceneName(l) { return l.scene.split('·').pop().trim(); }
+
+function nextLevelIndex() {
+  for (let i = 0; i < LEVELS.length; i++) if (!S.level[LEVELS[i].id]) return i;
+  return LEVELS.length - 1;
+}
+
 function renderHome() {
-  renderMap($('mapHome'), LEVEL.at);
-  const done = S.level[LEVEL.id] ? 1 : 0;
+  const nextIdx = nextLevelIndex();
+  const nl = LEVELS[nextIdx];
+  renderMap($('mapHome'), S.level[nl.id] ? nl.at + 1 : nl.at);
+
   $('statWords').textContent = collected();
   $('statWords2').textContent = collected();
-  $('statLevels').textContent = done;
+  $('statLevels').textContent = LEVELS.filter((l) => S.level[l.id]).length;
   $('statBest').textContent = S.best == null ? '—' : S.best;
   $('statTotal').textContent = TARGET_TOTAL;
   $('dexCount').textContent = collected();
-  $('btnStart').textContent = S.level[LEVEL.id] ? '再打一遍 · 入境审查' : '开始第 2 站 · 入境审查';
+
+  $('levelList').innerHTML = LEVELS.map((l, i) => {
+    const st = S.level[l.id];
+    const unlocked = i === 0 || S.level[LEVELS[i - 1].id];
+    const cls = st ? 'done' : (unlocked ? '' : 'locked');
+    const mark = st ? '✓' : (unlocked ? String(i + 1) : '🔒');
+    return '<div class="lvrow ' + cls + '" data-lv="' + l.id + '">' +
+      '<i>' + mark + '</i>' +
+      '<div><b>第 ' + (l.at + 1) + ' 站 · ' + sceneName(l) + '</b>' +
+      '<span>' + (st ? '得分 ' + st.score : (unlocked ? '可以开始' : '先过上一关')) + '</span></div>' +
+      '<em>' + (st ? '重玩' : (unlocked ? '开始 ▶' : '')) + '</em>' +
+    '</div>';
+  }).join('');
+
+  $('levelList').querySelectorAll('[data-lv]').forEach((row) => {
+    row.onclick = () => {
+      const i = LEVELS.findIndex((x) => x.id === row.dataset.lv);
+      if (i < 0) return;
+      if (i > 0 && !S.level[LEVELS[i - 1].id]) { toast('先过上一关'); return; }
+      startLevel(LEVELS[i].id);
+    };
+  });
+
+  const st = S.level[nl.id];
+  $('btnStart').textContent = st
+    ? '再打一遍 · ' + sceneName(nl)
+    : '开始第 ' + (nl.at + 1) + ' 站 · ' + sceneName(nl);
+  $('btnHome').onclick = renderHome;
+  $('btnHome').textContent = '回到地图';
   show('screenHome');
 }
 
@@ -580,8 +732,11 @@ function renderDex() {
    7. 关卡流程
    ============================================================ */
 let run = null;
+let L = LEVELS[0];
 
-function startLevel() {
+function startLevel(id) {
+  const i = LEVELS.findIndex((x) => x.id === id);
+  L = LEVELS[i >= 0 ? i : nextLevelIndex()];
   run = {
     idx: 0,
     attempts: 0,
@@ -598,10 +753,12 @@ function startLevel() {
 }
 
 function renderNode() {
-  const n = LEVEL.nodes[run.idx];
-  renderMap($('mapNode'), LEVEL.at);
-  $('nodeScene').textContent = LEVEL.scene;
-  $('nodeProgress').textContent = '第 ' + (run.idx + 1) + ' / ' + LEVEL.nodes.length + ' 个节点';
+  const n = L.nodes[run.idx];
+  renderMap($('mapNode'), L.at);
+  $('nodeScene').textContent = L.scene;
+  $('nodeProgress').textContent = '第 ' + (run.idx + 1) + ' / ' + L.nodes.length + ' 个节点';
+  $('sceneImg').src = L.img;
+  $('sceneImg').alt = L.scene;
   $('nodeWho').textContent = n.who;
   $('nodeEn').textContent = n.en;
   $('nodeZh').textContent = n.zh;
@@ -776,7 +933,7 @@ function nextNode() {
   run.attempts = 0;
   run.busy = false;
   listening = false;
-  if (run.idx >= LEVEL.nodes.length) finishLevel(); else renderNode();
+  if (run.idx >= L.nodes.length) finishLevel(); else renderNode();
 }
 
 /* ============================================================
@@ -784,33 +941,39 @@ function nextNode() {
    ============================================================ */
 function finishLevel() {
   const score = run.scores.length
-    ? Math.round(run.scores.reduce((a, b) => a + b, 0) / LEVEL.nodes.length)
+    ? Math.round(run.scores.reduce((a, b) => a + b, 0) / L.nodes.length)
     : 0;
   const avgReact = run.react.length
     ? (run.react.reduce((a, b) => a + b, 0) / run.react.length / 1000).toFixed(1)
     : null;
 
-  S.level[LEVEL.id] = { done: true, score: score, date: today() };
+  S.level[L.id] = { done: true, score: score, date: today() };
   if (S.best == null || score > S.best) S.best = score;
   saveState();
 
-  renderMap($('mapResult'), LEVEL.at + 1);
+  renderMap($('mapResult'), L.at + 1);
   $('resScore').textContent = score;
   $('resMeta').textContent = '本关得分 · ' + (avgReact ? '平均反应 ' + avgReact + ' 秒' : '未测到反应时间');
+
+  const allWords = run.newWords.slice();
+  (L.extraWords || []).forEach((w) => {
+    if (allWords.indexOf(w) < 0) { allWords.push(w); touchWord(w); }
+  });
+
   $('resDrops').innerHTML =
-    '<div class="drop"><b>🏅</b><span>ARRIVAL 章</span></div>' +
-    '<div class="drop"><b>' + run.newWords.length + '</b><span>个词进图鉴</span></div>' +
+    '<div class="drop"><b>🏅</b><span>' + L.badge + '</span></div>' +
+    '<div class="drop"><b>' + allWords.length + '</b><span>个词进图鉴</span></div>' +
     '<div class="drop"><b>' + Math.round(score) + '</b><span>本关分数</span></div>';
 
-  $('resWordCount').textContent = run.newWords.length;
-  $('resWords').innerHTML = run.newWords.map(wordCard).join('');
+  $('resWordCount').textContent = allWords.length;
+  $('resWords').innerHTML = allWords.map(wordCard).join('');
   bindCards($('resWords'));
 
   const hardIdx = Object.keys(run.hard);
   if (hardIdx.length) {
     $('resMistakeBox').classList.remove('hidden');
     $('resMistakes').innerHTML = hardIdx.map((i) => {
-      const n = LEVEL.nodes[Number(i)];
+      const n = L.nodes[Number(i)];
       const said = run.hard[i].filter(Boolean);
       return '<div class="fixrow">' +
         '<em>第 ' + (Number(i) + 1) + ' 个节点 · 标准说法</em>' +
@@ -822,18 +985,27 @@ function finishLevel() {
   } else {
     $('resMistakeBox').classList.add('hidden');
   }
+
+  const ni = LEVELS.indexOf(L) + 1;
+  if (ni < LEVELS.length) {
+    $('btnHome').textContent = '继续下一关 ▶';
+    $('btnHome').onclick = () => startLevel(LEVELS[ni].id);
+  } else {
+    $('btnHome').textContent = '回到地图';
+    $('btnHome').onclick = renderHome;
+  }
   show('screenResult');
 }
 
 /* ============================================================
    9. 绑定
    ============================================================ */
-$('btnStart').onclick = startLevel;
+$('btnStart').onclick = () => startLevel(LEVELS[nextLevelIndex()].id);
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
 $('btnDexBack').onclick = renderHome;
-$('btnPlay').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, false);
-$('btnSlow').onclick = () => speak(LEVEL.nodes[run ? run.idx : 0].en, true);
+$('btnPlay').onclick = () => speak(L.nodes[run ? run.idx : 0].en, false);
+$('btnSlow').onclick = () => speak(L.nodes[run ? run.idx : 0].en, true);
 $('btnTrans').onclick = () => {
   const zh = $('nodeZh');
   const willShow = zh.classList.contains('hidden');
