@@ -693,8 +693,8 @@ function renderHome() {
     const mark = st ? '✓' : (unlocked ? String(i + 1) : '🔒');
     return '<div class="lvrow ' + cls + '" data-lv="' + l.id + '">' +
       '<i>' + mark + '</i>' +
-      '<div><b>第 ' + (l.at + 1) + ' 站 · ' + sceneName(l) + '</b>' +
-      '<span>' + (st ? '得分 ' + st.score : (unlocked ? '可以开始' : '先过上一关')) + '</span></div>' +
+      '<div><b>第 ' + (i + 1) + ' 关 · ' + sceneName(l) + '</b>' +
+      '<span>第 ' + (l.at + 1) + ' 站 · ' + (st ? '得分 ' + st.score : (unlocked ? '可以开始' : '先过上一关')) + '</span></div>' +
       '<em>' + (st ? '重玩' : (unlocked ? '开始 ▶' : '')) + '</em>' +
     '</div>';
   }).join('');
@@ -710,8 +710,8 @@ function renderHome() {
 
   const st = S.level[nl.id];
   $('btnStart').textContent = st
-    ? '再打一遍 · ' + sceneName(nl)
-    : '开始第 ' + (nl.at + 1) + ' 站 · ' + sceneName(nl);
+    ? '再打一遍 · 第 ' + (nextIdx + 1) + ' 关 · ' + sceneName(nl)
+    : '开始第 ' + (nextIdx + 1) + ' 关 · ' + sceneName(nl);
   $('btnHome').onclick = renderHome;
   $('btnHome').textContent = '回到地图';
   show('screenHome');
@@ -756,7 +756,7 @@ function renderNode() {
   const n = L.nodes[run.idx];
   renderMap($('mapNode'), L.at);
   $('nodeScene').textContent = L.scene;
-  $('nodeProgress').textContent = '第 ' + (run.idx + 1) + ' / ' + L.nodes.length + ' 个节点';
+  $('nodeProgress').textContent = '第 ' + (LEVELS.indexOf(L) + 1) + ' 关 · 节点 ' + (run.idx + 1) + ' / ' + L.nodes.length;
   $('sceneImg').src = L.img;
   $('sceneImg').alt = L.scene;
   $('nodeWho').textContent = n.who;
