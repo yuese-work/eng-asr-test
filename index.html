@@ -321,6 +321,47 @@ const WORDS = {
   airline:      { ipa:'[ˈeəlain]',         def:'n. 航空公司；航线',    eg:'Which airline are you flying?' },
   customer:     { ipa:'[ˈkʌstəmə]',        def:'n. 顾客，主顾',        eg:'The customer is waiting at the desk.' },
   heavy:        { ipa:'[ˈhiːvi]',          def:'a. 重的；大的',        eg:'My bag is heavy.' },
+  exit:         { ipa:'[ˈeksit]',          def:'n. 出口；退场　vi. 退出', eg:'The exit is straight ahead.' },
+  entrance:     { ipa:'[inˈtrɑːns]',       def:'n. 入口，门口；进入',  eg:'Please use the other entrance.' },
+  sign:         { ipa:'[sain]',            def:'n. 符号；招牌；签名',  eg:'He is holding a sign.' },
+  straight:     { ipa:'[streit]',          def:'a. 直的　ad. 直接地',  eg:'Go straight ahead.' },
+  ahead:        { ipa:'[əˈhed]',           def:'ad. 在前；向前；提前',  eg:'The exit is straight ahead.' },
+  excuse:       { ipa:'[iksˈkjuːz]',       def:'vt. 原谅；免除　n. 借口', eg:'Excuse me. Are you Mr. Wang?' },
+  name:         { ipa:'[neim]',            def:'n. 名字；名誉　vt. 说出', eg:"What's your name?" },
+  wait:         { ipa:'[weit]',            def:'vi. 等，等候　n. 等待', eg:'Sorry for the wait.' },
+  number:       { ipa:'[ˈnʌmbə]',          def:'n. 数，数字；号码',    eg:"Do you have your driver's number?" },
+  driver:       { ipa:'[ˈdraivə]',         def:'n. 驾驶员，司机',      eg:'I am your driver.' },
+  call:         { ipa:'[kɔːl]',            def:'vt. 把…叫做；叫，喊',  eg:'I will call him.' },
+  phone:        { ipa:'[fəun]',            def:'n. 电话，电话机；耳机', eg:'Do you have his phone number?' },
+  gate:         { ipa:'[geit]',            def:'n. 大门；篱笆门',      eg:'He is at gate two.' },
+  welcome:      { ipa:'[ˈwelkəm]',         def:'int.&n.&vt. 欢迎',     eg:'Welcome to Osaka.' },
+  meet:         { ipa:'[miːt]',            def:'vt. 遇见　vi. 相遇',   eg:'Nice to meet you.' },
+  carry:        { ipa:'[ˈkæri]',           def:'vt. 携带；运载；传送',  eg:'Can you carry my bag?' },
+  sit:          { ipa:'[sit]',             def:'vi. 坐，就坐',         eg:'Please sit here.' },
+  ready:        { ipa:'[ˈredi]',           def:'a. 准备好的；愿意的',   eg:'Are you ready to go?' },
+  safe:         { ipa:'[seif]',            def:'a. 安全的；谨慎的',    eg:'Have a safe trip.' },
+  long:         { ipa:'[lɔŋ]',             def:'a. 长的；远的　ad. 长久', eg:'It was a long flight.' },
+  fine:         { ipa:'[fain]',            def:'a. 美好的；纤细的',    eg:'It was fine, thank you.' },
+  sorry:        { ipa:'[ˈsɔri]',           def:'a. 难过的；对不起的',  eg:'Sorry for the wait.' },
+  problem:      { ipa:'[ˈprɔbləm]',        def:'n. 问题；习题',        eg:'No problem.' },
+  ask:          { ipa:'[ɑːsk]',            def:'vt. 问；要求；邀请',    eg:'I will ask the information desk.' },
+  say:          { ipa:'[sei]',             def:'vt. 说；说明',         eg:'He says he is at gate two.' },
+  tell:         { ipa:'[tel]',             def:'vt. 讲述；吩咐；辨别',  eg:'Please tell me your name.' },
+  here:         { ipa:'[hiə]',             def:'ad. 这里；向这里',     eg:'Here it is.' },
+  there:        { ipa:'[ðeə]',             def:'ad. 在那里',           eg:'Wait there, please.' },
+  another:      { ipa:'[əˈnʌðə]',          def:'a. 再一个的；别的',    eg:"I'm waiting for another Mr. Wang." },
+  other:        { ipa:'[ˈʌðə]',            def:'a. 另外的；其余的',    eg:'Please use the other door.' },
+  again:        { ipa:'[əˈgein]',          def:'ad. 又一次；而且',     eg:'Could you say that again?' },
+  please:       { ipa:'[pliːz]',           def:'vt. 使高兴，请　vi. 满意', eg:'This way, please.' },
+  thank:        { ipa:'[θæŋk]',            def:'vt. 谢谢，感谢　n. 感谢', eg:'Thank you for your help.' },
+  pardon:       { ipa:'[ˈpɑːdn]',          def:'n. 原谅；赦免　vt. 原谅', eg:'Pardon? Could you repeat that?' },
+  understand:   { ipa:'[ˌʌndəˈstænd]',     def:'vt. 懂；获悉　vi. 懂得', eg:'I understand.' },
+  english:      { ipa:'[ˈiŋgli∫]',         def:'n. 英语　a. 英国人的',  eg:'Do you speak English?' },
+  slow:         { ipa:'[sləu]',            def:'a. 慢的；迟钝的',      eg:'Please speak more slowly.' },
+  quick:        { ipa:'[kwik]',            def:'a. 快的；敏捷的',      eg:'A quick question.' },
+  minute:       { ipa:'[ˈminit]',          def:'n. 分，分钟；一会儿',  eg:'Just a minute, please.' },
+  moment:       { ipa:'[ˈməumənt]',        def:'n. 片刻，瞬间，时刻',  eg:'One moment, please.' },
+  outside:      { ipa:'[ˈautˈsaid]',       def:'n. 外部　a. 外部的',   eg:'The car is outside.' },
 };
 
 /* ============================================================
@@ -466,6 +507,215 @@ const LEVELS = [
       answer: 'Yes, please.',
       answerZh: '好的，麻烦了。',
       accept: [['yes', 'yeah', 'sure', 'please', 'great']]
+    }
+  ]
+},
+{
+  id: 'l3',
+  scene: '关西机场 · 到达大厅',
+  at: 3,
+  img: 'img/scene-arrivals.png',
+  badge: 'ARRIVALS 章',
+  branching: true,
+  extraWords: ['entrance', 'sign', 'carry', 'sit', 'answer', 'say', 'tell', 'ask', 'here', 'there',
+               'again', 'please', 'pardon', 'understand', 'english', 'slow', 'quick', 'minute',
+               'moment', 'outside'],
+  nodes: [
+    {
+      id: 'e1',
+      kind: 'choice',
+      who: '📢 机场广播 · Announcement',
+      en: 'Welcome to Osaka. The exit is straight ahead.',
+      zh: '欢迎来到大阪。出口一直往前走。',
+      words: ['welcome', 'exit', 'straight', 'ahead'],
+      options: [
+        { text: '一直往前走', ok: true },
+        { text: '向左拐', ok: false },
+        { text: '坐电梯下楼', ok: false }
+      ]
+    },
+    {
+      id: 'e2',
+      kind: 'speak',
+      who: '🧑‍💼 接机的人 · Mr. Sato',
+      en: 'Excuse me. Are you Mr. Wang?',
+      zh: '打扰一下，您是王先生吗？',
+      words: ['excuse', 'name', 'meet'],
+      frame: 'Yes, ___ .',
+      frameFill: '可以填：that’s me / I am',
+      answer: "Yes, that's me.",
+      answerZh: '是的，就是我。',
+      accept: [['yes', 'yeah', 'me', 'that']]
+    },
+    {
+      id: 'e3',
+      kind: 'speak',
+      who: '🧑‍💼 接机的人 · Mr. Sato',
+      en: 'Which flight were you on?',
+      zh: '您坐的是哪个航班？',
+      words: ['flight', 'number', 'arrive'],
+      frame: 'I was on ___ .',
+      frameFill: '可以填：CA123 / the flight from Beijing',
+      answer: 'I was on CA123.',
+      answerZh: '我坐的是 CA123。',
+      accept: [['ca123', 'ca 123', 'c a 123', 'beijing', 'flight']]
+    },
+    {
+      id: 'e4',
+      kind: 'speak',
+      who: '🧑‍💼 接机的人 · Mr. Sato',
+      en: 'How was your flight?',
+      zh: '旅途怎么样？',
+      words: ['long', 'fine', 'safe'],
+      frame: 'It was ___ .',
+      frameFill: '可以填：fine / long / okay',
+      answer: 'It was fine, thank you.',
+      answerZh: '还不错，谢谢。',
+      accept: [['fine', 'good', 'long', 'okay', 'ok', 'great']]
+    },
+    {
+      id: 'e5',
+      kind: 'choice',
+      who: '🧑‍💼 接机的人 · Mr. Sato',
+      en: "Sorry, that's not my passenger.",
+      zh: '抱歉，那不是我要接的人。',
+      words: ['sorry', 'passenger', 'another', 'other'],
+      options: [
+        { text: '他认错人了', ok: true },
+        { text: '他不愿意载你', ok: false },
+        { text: '他在问你的名字', ok: false }
+      ]
+    },
+    {
+      id: 'e6',
+      kind: 'speak',
+      who: '🧑‍💼 接机的人 · Mr. Sato',
+      en: 'Do you need help?',
+      zh: '需要帮忙吗？',
+      words: ['help', 'find', 'driver'],
+      frame: "Yes, please. I'm looking for ___ .",
+      frameFill: '可以填：my driver / my hotel bus',
+      answer: "Yes, please. I'm looking for my driver.",
+      answerZh: '是的，我在找我的司机。',
+      accept: [['driver', 'looking', 'find']]
+    },
+    {
+      id: 'e7',
+      kind: 'branch',
+      who: 'ℹ️ 问询处 · Information desk',
+      en: "Do you have your driver's number?",
+      zh: '你有司机的电话吗？',
+      words: ['number', 'phone', 'call'],
+      options: [
+        { text: '有，在这里（Yes, here it is.）', next: 'a1' },
+        { text: '没有（No, I don’t.）', next: 'b1' }
+      ]
+    },
+    {
+      id: 'a1',
+      kind: 'speak',
+      who: 'ℹ️ 问询处 · Information desk',
+      en: 'He says he is at gate two.',
+      zh: '他说他在 2 号门。',
+      words: ['gate', 'say', 'wait'],
+      frame: 'So I should go to ___ .',
+      frameFill: '可以填：gate two / gate 2',
+      answer: 'So I should go to gate two.',
+      answerZh: '所以我该去 2 号门。',
+      accept: [['gate', 'two', '2']]
+    },
+    {
+      id: 'a2',
+      kind: 'speak',
+      who: 'ℹ️ 问询处 · Information desk',
+      en: 'Do you know the way?',
+      zh: '你知道怎么走吗？',
+      words: ['straight', 'left', 'right', 'outside'],
+      frame: 'Yes, ___ .',
+      frameFill: '可以填：straight ahead / I think so',
+      answer: 'Yes, straight ahead.',
+      answerZh: '知道，一直往前走。',
+      accept: [['straight', 'ahead', 'left', 'right', 'know']],
+      next: 'm1'
+    },
+    {
+      id: 'b1',
+      kind: 'speak',
+      who: 'ℹ️ 问询处 · Information desk',
+      en: "What's your name?",
+      zh: '您叫什么名字？',
+      words: ['name', 'answer', 'tell'],
+      frame: 'My name is ___ .',
+      frameFill: '可以填：Wang / Li',
+      answer: 'My name is Wang.',
+      answerZh: '我叫王。',
+      accept: [['wang', 'name']]
+    },
+    {
+      id: 'b2',
+      kind: 'speak',
+      who: 'ℹ️ 问询处 · Information desk',
+      en: 'Which flight were you on?',
+      zh: '您坐的是哪个航班？',
+      words: ['flight', 'number'],
+      frame: 'I was on ___ .',
+      frameFill: '可以填：CA123',
+      answer: 'I was on CA123.',
+      answerZh: '我坐的是 CA123。',
+      accept: [['ca123', 'ca 123', 'c a 123', 'beijing', 'flight']]
+    },
+    {
+      id: 'b3',
+      kind: 'choice',
+      who: '📢 机场广播 · Announcement',
+      en: 'Mr. Wang, please come to the information desk.',
+      zh: '王先生，请到问询处来。',
+      words: ['announce', 'information', 'desk'],
+      options: [
+        { text: '广播在叫你', ok: true },
+        { text: '广播在叫别人', ok: false },
+        { text: '广播在报航班号', ok: false }
+      ],
+      next: 'm1'
+    },
+    {
+      id: 'm1',
+      kind: 'speak',
+      who: '🚗 司机 · Mr. Tanaka',
+      en: 'Are you Mr. Wang? I am your driver.',
+      zh: '您是王先生吗？我是您的司机。',
+      words: ['driver', 'meet', 'wait'],
+      frame: "Yes, that's me. I'm ___ .",
+      frameFill: '可以填：looking for you / here for the pickup',
+      answer: "Yes, that's me. I'm looking for you.",
+      answerZh: '是的，我就是在找您。',
+      accept: [['me', 'looking', 'yes']]
+    },
+    {
+      id: 'm2',
+      kind: 'speak',
+      who: '🚗 司机 · Mr. Tanaka',
+      en: 'Sorry for the wait. This way, please.',
+      zh: '让您久等了。这边请。',
+      words: ['sorry', 'wait', 'please', 'ready'],
+      frame: 'No problem. ___ .',
+      frameFill: '可以填：thank you / let’s go',
+      answer: 'No problem. Thank you.',
+      answerZh: '没关系，谢谢。',
+      accept: [['problem', 'thank', 'okay', 'fine']]
+    },
+    {
+      id: 'm3',
+      kind: 'speak',
+      who: '🚗 司机 · Mr. Tanaka',
+      en: 'Welcome to Osaka.',
+      zh: '欢迎来到大阪。',
+      words: ['welcome', 'safe', 'meet'],
+      frame: 'Thank you. ___ .',
+      frameFill: '可以填：It’s good to be here / I’m happy to be here',
+      answer: "Thank you. It's good to be here.",
+      answerZh: '谢谢，很高兴来到这里。',
+      accept: [['thank', 'good', 'here', 'happy', 'glad']]
     }
   ]
 }
@@ -790,6 +1040,8 @@ function startLevel(id) {
   L = LEVELS[i >= 0 ? i : nextLevelIndex()];
   run = {
     idx: 0,
+    steps: 0,
+    nextOverride: null,
     attempts: 0,
     scores: [],
     react: [],
@@ -807,7 +1059,8 @@ function renderNode() {
   const n = L.nodes[run.idx];
   renderMap($('mapNode'), L.at);
   $('nodeScene').textContent = L.scene;
-  $('nodeProgress').textContent = '第 ' + (LEVELS.indexOf(L) + 1) + ' 关 · 节点 ' + (run.idx + 1) + ' / ' + L.nodes.length;
+  $('nodeProgress').textContent = '第 ' + (LEVELS.indexOf(L) + 1) + ' 关 · 第 ' + (run.steps + 1) + ' 步' +
+    (L.branching ? '' : ' / ' + L.nodes.length);
   $('sceneImg').src = L.img;
   $('sceneImg').alt = L.scene;
   $('nodeWho').textContent = n.who;
@@ -825,8 +1078,25 @@ function renderNode() {
     touchWord(w);
   });
 
-  if (n.kind === 'choice') renderChoice(n); else renderSpeak(n);
+  if (n.kind === 'branch') renderBranch(n);
+  else if (n.kind === 'choice') renderChoice(n);
+  else renderSpeak(n);
   speak(n.en, false);
+}
+
+/* 叙事分支：每个选项都成立，只是把故事引向不同的下一段 */
+function renderBranch(n) {
+  $('nodeAct').innerHTML =
+    '<ul class="opts">' + n.options.map((o, i) =>
+      '<li data-br="' + i + '"><b>' + 'ABC'[i] + '</b>' + o.text + '</li>').join('') + '</ul>';
+  $('nodeAct').querySelectorAll('[data-br]').forEach((li) => {
+    li.onclick = () => {
+      run.nextOverride = n.options[Number(li.dataset.br)].next;
+      $('feedback').innerHTML = '<div class="said"><b>你的选择</b><p>' +
+        esc(n.options[Number(li.dataset.br)].text) + '</p></div>';
+      setTimeout(nextNode, 400);
+    };
+  });
 }
 
 function renderChoice(n) {
@@ -990,11 +1260,23 @@ function esc(s) {
 }
 
 function nextNode() {
-  run.idx++;
+  const cur = L.nodes[run.idx];
+  const jump = run.nextOverride || (cur && cur.next);
+  run.nextOverride = null;
+  run.steps++;
+  let target = null;
+  if (jump) {
+    const i = L.nodes.findIndex((x) => x.id === jump);
+    if (i >= 0) target = i;
+  }
+  if (target === null) target = run.idx + 1;
+
   run.attempts = 0;
   run.busy = false;
   listening = false;
-  if (run.idx >= L.nodes.length) finishLevel(); else renderNode();
+  if (target >= L.nodes.length) { finishLevel(); return; }
+  run.idx = target;
+  renderNode();
 }
 
 /* ============================================================
@@ -1002,7 +1284,7 @@ function nextNode() {
    ============================================================ */
 function finishLevel() {
   const score = run.scores.length
-    ? Math.round(run.scores.reduce((a, b) => a + b, 0) / L.nodes.length)
+    ? Math.round(run.scores.reduce((a, b) => a + b, 0) / run.scores.length)
     : 0;
   const avgReact = run.react.length
     ? (run.react.reduce((a, b) => a + b, 0) / run.react.length / 1000).toFixed(1)
