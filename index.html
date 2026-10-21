@@ -587,12 +587,22 @@ function recognizeOnce() {
     out.abort = (byUser) => {
       if (byUser) out.stopped = true;
       try { rec.abort(); } catch (e) { /* 已经结束就算了 */ }
+      // iOS 切后台时 onend 可能永远不来，兜一个底，避免 Promise 永远挂着
+      setTimeout(() => finish('abort-timeout'), 300);
     };
     activeRec = out;
 
     watch = setTimeout(() => { out.abort(false); finish('watchdog'); }, 12000);
 
-    try { rec.start(); } catch (e) { out.errors.push('start:' + e.name); finish('start-failed'); }
+    try {
+      rec.start();
+    } catch (e) {
+      out.errors.push('start:' + e.name);
+      // 切后台回来时，上一个会话可能还没彻底释放，稍等再试一次
+      setTimeout(() => {
+        try { rec.start(); } catch (e2) { out.errors.push('retry:' + e2.name); finish('start-failed'); }
+      }, 350);
+    }
   });
 }
 
@@ -619,6 +629,18 @@ function stopListening() {
 }
 
 let startToken = 0;
+let wasHidden = false;
+
+/* 切后台/离开页面：iOS 会掐掉识别会话，主动收尾，别让状态卡在"正在听" */
+function hardResetListening() {
+  if (activeRec) { try { activeRec.abort(true); } catch (e) { /* ignore */ } }
+  activeRec = null;
+  listening = false;
+  startToken++;
+  if (run) run.busy = false;
+  resetMic();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
 
 /* ============================================================
    4. 判定：关键词命中，不要求逐字一致
@@ -850,6 +872,8 @@ function renderSpeak(n) {
 
 async function doSpeak(n, isReading) {
   if (run.busy || listening) return;
+  const myRun = run;
+  const myNode = run.idx;
   run.busy = true;
   const hint = $('hint');
   const my = ++startToken;
@@ -866,6 +890,14 @@ async function doSpeak(n, isReading) {
   if (my !== startToken) { listening = false; run.busy = false; resetMic(); return; }
 
   const res = await recognizeOnce();
+
+  // 等待期间可能已经换关、退出或切过后台，这时不要再改动状态
+  if (!run || run !== myRun || run.idx !== myNode) {
+    listening = false;
+    if (myRun) myRun.busy = false;
+    return;
+  }
+
   listening = false;
   run.busy = false;
   resetMic();
@@ -1061,6 +1093,24 @@ $('btnTrans').onclick = () => {
   if (willShow && run) run.usedTrans = true;
   $('btnTrans').textContent = willShow ? '译 收起翻译' : '译 翻译';
 };
+
+/* 切到后台再回来：识别会话已经被系统掐断，这里主动收尾并提示重按 */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (listening || activeRec) hardResetListening();
+    wasHidden = true;
+  } else if (wasHidden) {
+    wasHidden = false;
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (run) {
+      const h = $('hint');
+      if (h) h.textContent = '刚切过后台，麦克风要重新点一下';
+    }
+  }
+});
+window.addEventListener('pagehide', () => {
+  if (listening || activeRec) hardResetListening();
+});
 
 window.addEventListener('orientationchange', () => window.scrollTo(0, 0));
 renderHome();
