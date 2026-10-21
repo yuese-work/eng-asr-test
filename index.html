@@ -46,8 +46,27 @@
   .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
 
   /* 场景图：只交代"你在哪"，不提供任何答案信息 */
-  .sceneimg { height:158px; overflow:hidden; background:#0d131d; border-bottom:1px solid var(--line); }
+  .sceneimg { position:relative; height:158px; overflow:hidden; background:#0d131d; border-bottom:1px solid var(--line); }
   .sceneimg img { display:block; width:100%; height:100%; object-fit:cover; object-position:50% 55%; }
+  .backbtn {
+    position:absolute; top:10px; left:10px; padding:8px 13px; border-radius:18px;
+    background:rgba(9,13,19,.74); border:1px solid rgba(255,255,255,.2);
+    color:#e7edf6; font:600 13px/1 -apple-system,"PingFang SC",sans-serif;
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  }
+  .mask {
+    position:fixed; inset:0; z-index:90; background:rgba(5,8,12,.72);
+    display:flex; align-items:flex-end; justify-content:center; padding:16px;
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  .sheet {
+    width:100%; max-width:400px; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; padding:20px; margin-bottom:12px;
+  }
+  .sheet h3 { margin:0 0 8px; font-size:17px; }
+  .sheet p { margin:0 0 16px; font-size:14px; color:var(--muted); }
+  .sheet button { width:100%; padding:15px; border:0; border-radius:11px; margin-bottom:9px; font:700 16px/1 inherit; background:linear-gradient(180deg,#f7c548,#e0a114); color:#171017; }
+  .sheet button.ghost { background:var(--panel2); border:1px solid var(--line); color:#cfd9ea; font-weight:600; margin-bottom:0; }
   .stat { display:flex; gap:12px; }
   .stat div { flex:1; text-align:center; padding:12px 6px; background:var(--panel2); border-radius:10px; }
   .stat b { display:block; font-size:22px; color:var(--amber); line-height:1.2; }
@@ -171,6 +190,7 @@
     <div class="map" id="mapNode"></div>
     <div class="sceneimg">
       <img id="sceneImg" src="img/scene-immigration.png" alt="场景图">
+      <button class="backbtn" id="btnBack">← 返回</button>
     </div>
     <div class="scene">
       <b id="nodeScene">关西机场 · 入境审查</b>
@@ -231,6 +251,15 @@
 
 </div>
 <div class="toast" id="toast"></div>
+
+<div class="mask hidden" id="quitMask">
+  <div class="sheet">
+    <h3>要退出这一关吗？</h3>
+    <p>退出后本关进度不保存，下次要从第 1 个节点重新开始。</p>
+    <button id="btnQuitNo">继续玩</button>
+    <button class="ghost" id="btnQuitYes">退出到地图</button>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -1004,6 +1033,25 @@ $('btnStart').onclick = () => startLevel(LEVELS[nextLevelIndex()].id);
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
 $('btnDexBack').onclick = renderHome;
+
+/* 关卡内的返回：先停掉正在进行的识别，再确认，避免误触丢进度 */
+$('btnBack').onclick = () => {
+  if (!run) { renderHome(); return; }
+  if (listening) stopListening();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  $('quitMask').classList.remove('hidden');
+};
+$('btnQuitNo').onclick = () => $('quitMask').classList.add('hidden');
+$('quitMask').onclick = (e) => { if (e.target === $('quitMask')) $('quitMask').classList.add('hidden'); };
+$('btnQuitYes').onclick = () => {
+  $('quitMask').classList.add('hidden');
+  if (listening) stopListening();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  listening = false;
+  run = null;
+  renderHome();
+};
+
 $('btnPlay').onclick = () => speak(L.nodes[run ? run.idx : 0].en, false);
 $('btnSlow').onclick = () => speak(L.nodes[run ? run.idx : 0].en, true);
 $('btnTrans').onclick = () => {
