@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>音色试听</title>
+<style>
+  :root { color-scheme: dark; --bg:#0b0f16; --panel:#141a24; --panel2:#1b2330; --line:#253044; --text:#e7edf6; --muted:#8d9bb0; --amber:#f0b429; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:16px 14px 48px; background:var(--bg); color:var(--text);
+         font:16px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; -webkit-text-size-adjust:100%; }
+  .wrap { max-width:430px; margin:0 auto; }
+  h1 { font-size:21px; margin:0 0 6px; }
+  .hint { color:var(--muted); font-size:14px; margin:0 0 18px; }
+  .row { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+  .top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px; }
+  .name { font-size:17px; font-weight:700; }
+  .tag { font-size:11px; color:var(--amber); border:1px solid rgba(240,180,41,.35); border-radius:10px; padding:2px 8px; white-space:nowrap; }
+  .desc { color:var(--muted); font-size:13px; margin:0 0 10px; }
+  audio { width:100%; height:38px; }
+  .line { font-size:13px; color:#9fb0c6; margin-top:8px; font-style:italic; }
+  .foot { color:var(--muted); font-size:13px; margin-top:18px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>音色试听</h1>
+  <p class="hint">同一句话，七个人念。听一遍，告诉我你喜欢哪个（说名字就行）。</p>
+
+  <div class="row">
+    <div class="top"><span class="name">Andrew</span><span class="tag">推荐 · 最像 Alex</span></div>
+    <p class="desc">温暖、自信、真诚。男声里最"有人味"的一个。</p>
+    <audio controls preload="none" src="audio/voices/en-US-AndrewNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Brian</span><span class="tag">随和</span></div>
+    <p class="desc">口语化、亲切，像朋友在跟你说话。</p>
+    <audio controls preload="none" src="audio/voices/en-US-BrianNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Christopher</span><span class="tag">沉稳</span></div>
+    <p class="desc">可靠、有权威感。很适合海关官员。</p>
+    <audio controls preload="none" src="audio/voices/en-US-ChristopherNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Guy</span><span class="tag">热情</span></div>
+    <p class="desc">新闻播报感，情绪比较外放。</p>
+    <audio controls preload="none" src="audio/voices/en-US-GuyNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Ryan</span><span class="tag">英式</span></div>
+    <p class="desc">英国口音男声，温和克制。</p>
+    <audio controls preload="none" src="audio/voices/en-GB-RyanNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Ava</span><span class="tag">女声</span></div>
+    <p class="desc">活泼、亲切。适合机场广播。</p>
+    <audio controls preload="none" src="audio/voices/en-US-AvaNeural.mp3"></audio>
+  </div>
+
+  <div class="row">
+    <div class="top"><span class="name">Jenny</span><span class="tag">女声</span></div>
+    <p class="desc">友好、体贴，语速舒服。</p>
+    <audio controls preload="none" src="audio/voices/en-US-JennyNeural.mp3"></audio>
+  </div>
+
+  <p class="foot">
+    这些是微软的神经语音，生成成音频文件后存进网页——<b>不依赖你手机装了哪些声音</b>，
+    换手机、换浏览器听起来都一样。<br>
+    你选好之后，我会把三关的台词全部用这个声音重新生成一遍。
+  </p>
+</div>
+</body>
+</html>
