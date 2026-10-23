@@ -856,11 +856,48 @@ function speakOne(part, slow, v) {
   });
 }
 
-/* 按标点拆句、逐句念、句间留气口 —— 比一口气念完自然得多 */
+/* 预生成的神经语音优先；没有对应文件时回退到系统语音 */
+let currentAudio = null;
+function stopAudio() {
+  if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; }
+}
+function playAudio(src) {
+  return new Promise((resolve) => {
+    if (!window.Audio) { resolve(false); return; }
+    stopAudio();
+    const a = new Audio(src);
+    currentAudio = a;
+    let settled = false;
+    const done = (ok) => {
+      if (settled) return;
+      settled = true;
+      if (!ok && currentAudio === a) currentAudio = null;
+      resolve(ok);
+    };
+    a.onended = () => done(true);
+    a.onerror = () => done(false);
+    const p = a.play();
+    if (p && p.catch) p.catch(() => done(false));
+    setTimeout(() => { if (!settled) { try { a.pause(); } catch (e) { /* ignore */ } done(false); } }, 15000);
+  });
+}
+
+/* 当前关卡/节点的音频文件名 */
+function nodeAudio(kind, slow) {
+  if (!L || !run) return null;
+  return 'audio/lines/' + L.id + '-' + run.idx + '-' + kind + (slow ? '-slow' : '') + '.mp3';
+}
+
+/* 按标点拆句、逐句念、句间留气口 —— 系统语音的兜底方案 */
 let speakSeq = 0;
-async function speak(text, slow, who) {
-  if (!window.speechSynthesis) return;
+async function speak(text, slow, who, src) {
   const my = ++speakSeq;
+  if (src) {
+    const ok = await playAudio(src);
+    if (my !== speakSeq) return;
+    if (ok) return;
+  }
+  if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   await sleepMs(50);            // iOS 上 cancel 之后立刻 speak 会吞掉第一句
   if (my !== speakSeq) return;
@@ -973,6 +1010,7 @@ function hardResetListening() {
   startToken++;
   if (run) run.busy = false;
   resetMic();
+  stopAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
@@ -1030,7 +1068,7 @@ function wordCard(w) {
 }
 function bindCards(root) {
   root.querySelectorAll('[data-say]').forEach((b) => {
-    b.onclick = () => speak(b.dataset.say, false);
+    b.onclick = () => speak(b.dataset.say, false, null, 'audio/words/' + b.dataset.say + '.mp3');
   });
   root.querySelectorAll('[data-ipa]').forEach((b) => {
     b.onclick = () => {
@@ -1186,7 +1224,7 @@ function renderNode() {
   if (n.kind === 'branch') renderBranch(n);
   else if (n.kind === 'choice') renderChoice(n);
   else renderSpeak(n);
-  speak(n.en, false, n.who);
+  speak(n.en, false, n.who, nodeAudio('en', false));
 }
 
 /* 叙事分支：每个选项都成立，只是把故事引向不同的下一段 */
@@ -1220,7 +1258,7 @@ function renderChoice(n) {
       } else {
         li.classList.add('wrong');
         $('feedback').innerHTML = '<div class="tip"><b>再听一次</b><p>他在要两样东西：护照，还有入境卡。</p></div>';
-        speak(n.en, true, n.who);
+        speak(n.en, true, n.who, nodeAudio('en', true));
       }
     };
   });
@@ -1323,13 +1361,13 @@ function stepDown(n, msg) {
   if (tries === 1) {
     html += '<p>点「慢速」再听一遍他在问什么。</p></div>';
     $('feedback').innerHTML = html;
-    speak(n.en, true, n.who);
+    speak(n.en, true, n.who, nodeAudio('en', true));
   } else if (tries === 2) {
     $('nodeZh').classList.remove('hidden');
     $('btnTrans').textContent = '译 收起翻译';
     html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p></div>';
     $('feedback').innerHTML = html;
-    speak(n.answer, true, n.who);
+    speak(n.answer, true, n.who, nodeAudio('ans', true));
   } else {
     revealAnswer(n);
   }
@@ -1348,8 +1386,8 @@ function revealAnswer(n) {
       '<p id="ansZh" class="hidden" style="margin-top:8px">' + esc(n.answerZh || '') + '</p>' +
     '</div>' +
     '<div class="actrow" style="margin-top:12px"><button id="btnShadow">🎤 跟着念一遍（算通过）</button></div>';
-  speak(n.answer, true, n.who);
-  $('btnPlayAns').onclick = () => speak(n.answer, false, n.who);
+  speak(n.answer, true, n.who, nodeAudio('ans', true));
+  $('btnPlayAns').onclick = () => speak(n.answer, false, n.who, nodeAudio('ans', false));
   $('btnTransAns').onclick = () => {
     const zh = $('ansZh');
     const willShow = zh.classList.contains('hidden');
@@ -1470,14 +1508,15 @@ $('quitMask').onclick = (e) => { if (e.target === $('quitMask')) $('quitMask').c
 $('btnQuitYes').onclick = () => {
   $('quitMask').classList.add('hidden');
   if (listening) stopListening();
+  stopAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   listening = false;
   run = null;
   renderHome();
 };
 
-$('btnPlay').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, false, n.who); };
-$('btnSlow').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, true, n.who); };
+$('btnPlay').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, false, n.who, nodeAudio('en', false)); };
+$('btnSlow').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, true, n.who, nodeAudio('en', true)); };
 $('btnTrans').onclick = () => {
   const zh = $('nodeZh');
   const willShow = zh.classList.contains('hidden');
