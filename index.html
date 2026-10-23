@@ -192,6 +192,7 @@
           <button class="btn ghost" id="btnVoiceRefresh" style="flex:1;margin:0">刷新音色</button>
           <button class="btn ghost" id="btnVoiceTry" style="flex:1;margin:0">试听一句</button>
         </div>
+        <p class="muted" id="voiceHint" style="font-size:12px;margin:8px 0 0"></p>
         <p class="muted" style="font-size:12px;margin:10px 0 0;line-height:1.6">
           想更好听：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，下载 Enhanced 或 Premium 音色，再回到这里选。
         </p>
@@ -781,15 +782,24 @@ const NOVELTY = /^(aaron|fred|albert|bad news|bahh|bells|boing|bubbles|cellos|de
 
 function voiceScore(v) {
   const n = v.name || '';
+  const id = ((v.voiceURI || '') + ' ' + n).toLowerCase();
   if (!/^en/i.test(v.lang || '')) return -999;
   let s = 0;
-  if (/premium|neural/i.test(n)) s += 60;
-  if (/enhanced/i.test(n)) s += 45;
+  if (/premium|neural/.test(id)) s += 60;
+  if (/enhanced/.test(id)) s += 45;
   if (/samantha|ava|alex|joelle|noelle|nicky|tom|allie|serena|susan|zoe|evan|nathan|joanna|matthew|daniel|karen|moira|tessa/i.test(n)) s += 30;
   if (NOVELTY.test(n.trim())) s -= 60;
   if (/^en[-_]US/i.test(v.lang)) s += 8;
   else if (/^en[-_]GB/i.test(v.lang)) s += 4;
   return s;
+}
+
+/* 同名音色（普通版/增强版）靠 voiceURI 区分 */
+function voiceKey(v) { return v.voiceURI || ((v.name || '') + '|' + (v.lang || '')); }
+function voiceLabel(v) {
+  const id = ((v.voiceURI || '') + ' ' + (v.name || '')).toLowerCase();
+  const tag = /premium|neural/.test(id) ? ' · Premium' : (/enhanced/.test(id) ? ' · 增强' : '');
+  return (v.name || '未命名') + '（' + (v.lang || '?') + '）' + tag;
 }
 
 function refreshVoices() {
@@ -809,8 +819,8 @@ if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
 function voiceFor(who) {
   if (!voices.length) refreshVoices();
   if (!voices.length) return null;
-  if (S.voice) {
-    const picked = voices.find((v) => v.name === S.voice);
+  if (S.voiceURI) {
+    const picked = voices.find((v) => voiceKey(v) === S.voiceURI);
     if (picked) return picked;
   }
   const top = voices.slice(0, Math.min(4, voices.length));
@@ -1099,11 +1109,18 @@ function fillVoiceSelect() {
   refreshVoices();
   const sel = $('voiceSel');
   if (!sel) return;
-  if (S.voice && !voices.some((v) => v.name === S.voice)) S.voice = '';
+  if (S.voiceURI && !voices.some((v) => voiceKey(v) === S.voiceURI)) S.voiceURI = '';
   sel.innerHTML = '<option value="">自动（按角色挑最好的）</option>' +
-    voices.map((v) => '<option value="' + esc(v.name) + '">' + esc(v.name) + '（' + v.lang + '）</option>').join('');
-  sel.value = S.voice || '';
-  sel.onchange = () => { S.voice = sel.value; saveState(); };
+    voices.map((v) => '<option value="' + esc(voiceKey(v)) + '">' + esc(voiceLabel(v)) + '</option>').join('');
+  sel.value = S.voiceURI || '';
+  sel.onchange = () => { S.voiceURI = sel.value; saveState(); };
+
+  const hint = $('voiceHint');
+  if (hint) {
+    const enhanced = voices.filter((v) => /premium|neural|enhanced/i.test((v.voiceURI || '') + ' ' + v.name)).length;
+    hint.textContent = '系统向网页开放了 ' + voices.length + ' 个英文音色' +
+      (enhanced ? '，其中 ' + enhanced + ' 个是增强版' : '（没有检测到增强版）') + '。';
+  }
 }
 
 function renderDex() {
