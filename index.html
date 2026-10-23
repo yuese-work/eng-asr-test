@@ -188,7 +188,10 @@
         <h2>声音</h2>
         <p class="muted" style="margin-bottom:10px">换一个音色，念出来的感觉完全不一样。</p>
         <select class="voiceSel" id="voiceSel"></select>
-        <button class="btn ghost" id="btnVoiceTry" style="margin:10px 0 0">试听一句</button>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn ghost" id="btnVoiceRefresh" style="flex:1;margin:0">刷新音色</button>
+          <button class="btn ghost" id="btnVoiceTry" style="flex:1;margin:0">试听一句</button>
+        </div>
         <p class="muted" style="font-size:12px;margin:10px 0 0;line-height:1.6">
           想更好听：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，下载 Enhanced 或 Premium 音色，再回到这里选。
         </p>
@@ -782,7 +785,7 @@ function voiceScore(v) {
   let s = 0;
   if (/premium|neural/i.test(n)) s += 60;
   if (/enhanced/i.test(n)) s += 45;
-  if (/samantha|ava|allie|serena|susan|zoe|evan|nathan|joanna|matthew|daniel|karen|moira|tessa/i.test(n)) s += 30;
+  if (/samantha|ava|alex|joelle|noelle|nicky|tom|allie|serena|susan|zoe|evan|nathan|joanna|matthew|daniel|karen|moira|tessa/i.test(n)) s += 30;
   if (NOVELTY.test(n.trim())) s -= 60;
   if (/^en[-_]US/i.test(v.lang)) s += 8;
   else if (/^en[-_]GB/i.test(v.lang)) s += 4;
@@ -1087,15 +1090,20 @@ function renderHome() {
   $('btnHome').onclick = renderHome;
   $('btnHome').textContent = '回到地图';
 
+  fillVoiceSelect();
+  show('screenHome');
+}
+
+/* 系统里下载了新音色后，Safari 不一定立刻推给网页，所以留一个手动刷新 */
+function fillVoiceSelect() {
   refreshVoices();
   const sel = $('voiceSel');
-  if (sel) {
-    sel.innerHTML = '<option value="">自动（按角色挑最好的）</option>' +
-      voices.map((v) => '<option value="' + esc(v.name) + '">' + esc(v.name) + '（' + v.lang + '）</option>').join('');
-    sel.value = S.voice || '';
-    sel.onchange = () => { S.voice = sel.value; saveState(); };
-  }
-  show('screenHome');
+  if (!sel) return;
+  if (S.voice && !voices.some((v) => v.name === S.voice)) S.voice = '';
+  sel.innerHTML = '<option value="">自动（按角色挑最好的）</option>' +
+    voices.map((v) => '<option value="' + esc(v.name) + '">' + esc(v.name) + '（' + v.lang + '）</option>').join('');
+  sel.value = S.voice || '';
+  sel.onchange = () => { S.voice = sel.value; saveState(); };
 }
 
 function renderDex() {
@@ -1424,6 +1432,10 @@ function finishLevel() {
    9. 绑定
    ============================================================ */
 $('btnStart').onclick = () => startLevel(LEVELS[nextLevelIndex()].id);
+$('btnVoiceRefresh').onclick = () => {
+  fillVoiceSelect();
+  toast('找到 ' + voices.length + ' 个英文音色');
+};
 $('btnVoiceTry').onclick = () => speak('Hello. Welcome to Osaka. Have a nice day.', false, 'preview');
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
@@ -1468,6 +1480,8 @@ document.addEventListener('visibilitychange', () => {
     if (run) {
       const h = $('hint');
       if (h) h.textContent = '刚切过后台，麦克风要重新点一下';
+    } else {
+      fillVoiceSelect();   // 从"设置"里下完音色回来，自动重扫一遍
     }
   }
 });
