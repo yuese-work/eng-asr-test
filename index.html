@@ -131,6 +131,7 @@
   .lvrow b { display:block; font-size:14px; }
   .lvrow span { font-size:11px; color:var(--muted); }
   .lvrow em { font-style:normal; font-size:12px; color:var(--amber); }
+  .voiceSel { width:100%; padding:12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:#e7edf6; font:15px/1 -apple-system,"PingFang SC",sans-serif; }
   .fixrow { background:#10161f; border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:9px; }
   .fixrow em { font-style:normal; font-size:11px; color:var(--muted); display:block; }
   .fixrow p { margin:2px 0 0; font-size:16px; }
@@ -182,6 +183,16 @@
 
       <button class="btn" id="btnStart">开始第 2 站 · 入境审查</button>
       <button class="btn ghost" id="btnDex">词汇图鉴（<span id="dexCount">0</span>）</button>
+
+      <div class="card" style="margin-top:14px">
+        <h2>声音</h2>
+        <p class="muted" style="margin-bottom:10px">换一个音色，念出来的感觉完全不一样。</p>
+        <select class="voiceSel" id="voiceSel"></select>
+        <button class="btn ghost" id="btnVoiceTry" style="margin:10px 0 0">试听一句</button>
+        <p class="muted" style="font-size:12px;margin:10px 0 0;line-height:1.6">
+          想更好听：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，下载 Enhanced 或 Premium 音色，再回到这里选。
+        </p>
+      </div>
     </div>
   </div>
 
@@ -760,33 +771,93 @@ function today() { return new Date().toISOString().slice(0, 10); }
    3. 语音：合成 + 识别（配置来自 iPhone 实测结论）
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let voice = null;
+let voices = [];
 
-function pickVoice() {
+/* 苹果自带的"玩具音"和早期机器人音，尽量别选到 */
+const NOVELTY = /^(aaron|fred|albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|organ|ralph|trinoids|whisper|wobble|zarvox|junior|kathy|princess|superstar)$/i;
+
+function voiceScore(v) {
+  const n = v.name || '';
+  if (!/^en/i.test(v.lang || '')) return -999;
+  let s = 0;
+  if (/premium|neural/i.test(n)) s += 60;
+  if (/enhanced/i.test(n)) s += 45;
+  if (/samantha|ava|allie|serena|susan|zoe|evan|nathan|joanna|matthew|daniel|karen|moira|tessa/i.test(n)) s += 30;
+  if (NOVELTY.test(n.trim())) s -= 60;
+  if (/^en[-_]US/i.test(v.lang)) s += 8;
+  else if (/^en[-_]GB/i.test(v.lang)) s += 4;
+  return s;
+}
+
+function refreshVoices() {
   if (!window.speechSynthesis) return;
-  const vs = window.speechSynthesis.getVoices();
-  voice = vs.find((v) => /en[-_]US/i.test(v.lang)) || vs.find((v) => /^en/i.test(v.lang)) || null;
+  voices = window.speechSynthesis.getVoices()
+    .filter((v) => /^en/i.test(v.lang || ''))
+    .map((v) => ({ v: v, s: voiceScore(v) }))
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.v);
 }
-pickVoice();
+refreshVoices();
 if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
-  window.speechSynthesis.addEventListener('voiceschanged', pickVoice);
+  window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
 }
 
-let speakSeq = 0;
-function speak(text, slow) {
+/* 同一个角色永远用同一个声音，不同角色尽量换人 */
+function voiceFor(who) {
+  if (!voices.length) refreshVoices();
+  if (!voices.length) return null;
+  if (S.voice) {
+    const picked = voices.find((v) => v.name === S.voice);
+    if (picked) return picked;
+  }
+  const top = voices.slice(0, Math.min(4, voices.length));
+  let h = 0;
+  for (const ch of String(who || '')) h = (h * 31 + ch.codePointAt(0)) % 9973;
+  return top[h % top.length];
+}
+
+function splitClauses(text) {
+  const m = String(text).match(/[^,.!?;]+[,.!?;]?/g) || [text];
+  return m.map((s) => s.trim()).filter(Boolean);
+}
+function pauseFor(part, slow) {
+  const last = part.slice(-1);
+  const base = (last === '.' || last === '?' || last === '!') ? 190 : 90;
+  return slow ? Math.round(base * 1.8) : base;
+}
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function speakOne(part, slow, v) {
   return new Promise((resolve) => {
-    if (!window.speechSynthesis) { resolve(); return; }
-    const my = ++speakSeq;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = slow ? 0.6 : 0.92;
-    if (voice) u.voice = voice;
-    u.onend = () => { if (my === speakSeq) resolve(); };
-    u.onerror = () => { if (my === speakSeq) resolve(); };
-    window.speechSynthesis.speak(u);
-    setTimeout(() => { if (my === speakSeq) resolve(); }, slow ? 6000 : 4000);
+    const u = new SpeechSynthesisUtterance(part);
+    u.lang = (v && v.lang) || 'en-US';
+    u.rate = slow ? 0.68 : 0.95;
+    u.pitch = 1;
+    if (v) u.voice = v;
+    let done = false;
+    const end = () => { if (!done) { done = true; resolve(); } };
+    u.onend = end;
+    u.onerror = end;
+    try { window.speechSynthesis.speak(u); } catch (e) { end(); }
+    setTimeout(end, Math.max(2000, part.length * 140) * (slow ? 1.9 : 1));
   });
+}
+
+/* 按标点拆句、逐句念、句间留气口 —— 比一口气念完自然得多 */
+let speakSeq = 0;
+async function speak(text, slow, who) {
+  if (!window.speechSynthesis) return;
+  const my = ++speakSeq;
+  window.speechSynthesis.cancel();
+  await sleepMs(50);            // iOS 上 cancel 之后立刻 speak 会吞掉第一句
+  if (my !== speakSeq) return;
+  const v = voiceFor(who);
+  for (const part of splitClauses(text)) {
+    if (my !== speakSeq) return;
+    await speakOne(part, slow, v);
+    if (my !== speakSeq) return;
+    await sleepMs(pauseFor(part, slow));
+  }
 }
 
 /* 识别：不连续、单次、让它自己结束；中间结果做兜底。
@@ -1015,6 +1086,15 @@ function renderHome() {
     : '开始第 ' + (nextIdx + 1) + ' 关 · ' + sceneName(nl);
   $('btnHome').onclick = renderHome;
   $('btnHome').textContent = '回到地图';
+
+  refreshVoices();
+  const sel = $('voiceSel');
+  if (sel) {
+    sel.innerHTML = '<option value="">自动（按角色挑最好的）</option>' +
+      voices.map((v) => '<option value="' + esc(v.name) + '">' + esc(v.name) + '（' + v.lang + '）</option>').join('');
+    sel.value = S.voice || '';
+    sel.onchange = () => { S.voice = sel.value; saveState(); };
+  }
   show('screenHome');
 }
 
@@ -1081,7 +1161,7 @@ function renderNode() {
   if (n.kind === 'branch') renderBranch(n);
   else if (n.kind === 'choice') renderChoice(n);
   else renderSpeak(n);
-  speak(n.en, false);
+  speak(n.en, false, n.who);
 }
 
 /* 叙事分支：每个选项都成立，只是把故事引向不同的下一段 */
@@ -1115,7 +1195,7 @@ function renderChoice(n) {
       } else {
         li.classList.add('wrong');
         $('feedback').innerHTML = '<div class="tip"><b>再听一次</b><p>他在要两样东西：护照，还有入境卡。</p></div>';
-        speak(n.en, true);
+        speak(n.en, true, n.who);
       }
     };
   });
@@ -1218,13 +1298,13 @@ function stepDown(n, msg) {
   if (tries === 1) {
     html += '<p>点「慢速」再听一遍他在问什么。</p></div>';
     $('feedback').innerHTML = html;
-    speak(n.en, true);
+    speak(n.en, true, n.who);
   } else if (tries === 2) {
     $('nodeZh').classList.remove('hidden');
     $('btnTrans').textContent = '译 收起翻译';
     html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p></div>';
     $('feedback').innerHTML = html;
-    speak(n.answer, true);
+    speak(n.answer, true, n.who);
   } else {
     revealAnswer(n);
   }
@@ -1243,8 +1323,8 @@ function revealAnswer(n) {
       '<p id="ansZh" class="hidden" style="margin-top:8px">' + esc(n.answerZh || '') + '</p>' +
     '</div>' +
     '<div class="actrow" style="margin-top:12px"><button id="btnShadow">🎤 跟着念一遍（算通过）</button></div>';
-  speak(n.answer, true);
-  $('btnPlayAns').onclick = () => speak(n.answer, false);
+  speak(n.answer, true, n.who);
+  $('btnPlayAns').onclick = () => speak(n.answer, false, n.who);
   $('btnTransAns').onclick = () => {
     const zh = $('ansZh');
     const willShow = zh.classList.contains('hidden');
@@ -1344,6 +1424,7 @@ function finishLevel() {
    9. 绑定
    ============================================================ */
 $('btnStart').onclick = () => startLevel(LEVELS[nextLevelIndex()].id);
+$('btnVoiceTry').onclick = () => speak('Hello. Welcome to Osaka. Have a nice day.', false, 'preview');
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
 $('btnDexBack').onclick = renderHome;
@@ -1366,8 +1447,8 @@ $('btnQuitYes').onclick = () => {
   renderHome();
 };
 
-$('btnPlay').onclick = () => speak(L.nodes[run ? run.idx : 0].en, false);
-$('btnSlow').onclick = () => speak(L.nodes[run ? run.idx : 0].en, true);
+$('btnPlay').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, false, n.who); };
+$('btnSlow').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, true, n.who); };
 $('btnTrans').onclick = () => {
   const zh = $('nodeZh');
   const willShow = zh.classList.contains('hidden');
