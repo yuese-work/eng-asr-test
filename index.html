@@ -919,6 +919,8 @@ let micBtn = null;
 function recognizeOnce() {
   return new Promise((resolve) => {
     if (!SR) { resolve({ ok: false, reason: 'no-api', text: '', errors: ['no-api'] }); return; }
+    // 上一条会话可能还挂在系统里（切后台、连点都会这样），先把它收掉
+    if (activeRec) { try { activeRec.abort(true); } catch (e) { /* ignore */ } activeRec = null; }
     const rec = new SR();
     rec.lang = 'en-US';
     rec.continuous = false;
@@ -1296,9 +1298,11 @@ async function doSpeak(n, isReading) {
   setMicListening();
   hint.textContent = '说一句完整的英文就行，说完等一下';
 
-  // 关键：先掐掉语音合成，避免和识别抢音频会话（这是 iPhone 上 aborted 的教训）
+  // 关键：先把还在播的台词停掉。iOS 上音频播放会占住会话，
+  // 麦克风此时打开会录不到任何声音（表现就是"没反应"）。
+  stopAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  await new Promise((r) => setTimeout(r, 350));
+  await sleepMs(500);
 
   if (my !== startToken) { listening = false; run.busy = false; resetMic(); return; }
 
@@ -1323,7 +1327,8 @@ async function doSpeak(n, isReading) {
     markHard(run.idx, '');
     const why = res.errors.length
       ? '（识别返回：' + res.errors.join(', ') + '）'
-      : (res.reason === 'watchdog' ? '（等了 12 秒没拿到声音）' : '');
+      : (res.reason === 'watchdog' ? '（等了 12 秒没拿到声音）'
+        : (!res.started ? '（识别没有启动成功）' : ''));
     stepDown(n, '没听到你说话。' + why);
     return;
   }
@@ -1515,8 +1520,16 @@ $('btnQuitYes').onclick = () => {
   renderHome();
 };
 
-$('btnPlay').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, false, n.who, nodeAudio('en', false)); };
-$('btnSlow').onclick = () => { const n = L.nodes[run ? run.idx : 0]; speak(n.en, true, n.who, nodeAudio('en', true)); };
+$('btnPlay').onclick = () => {
+  if (listening) stopListening();   // 正在听的时候放音频会把麦克风搅乱
+  const n = L.nodes[run ? run.idx : 0];
+  speak(n.en, false, n.who, nodeAudio('en', false));
+};
+$('btnSlow').onclick = () => {
+  if (listening) stopListening();
+  const n = L.nodes[run ? run.idx : 0];
+  speak(n.en, true, n.who, nodeAudio('en', true));
+};
 $('btnTrans').onclick = () => {
   const zh = $('nodeZh');
   const willShow = zh.classList.contains('hidden');
