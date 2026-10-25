@@ -915,12 +915,14 @@ async function speak(text, slow, who, src) {
 let listening = false;
 let activeRec = null;
 let micBtn = null;
+let recCooldownUntil = 0;   // 识别结束后 iOS 要一会儿才释放麦克风
 
 function recognizeOnce() {
   return new Promise((resolve) => {
     if (!SR) { resolve({ ok: false, reason: 'no-api', text: '', errors: ['no-api'] }); return; }
     // 上一条会话可能还挂在系统里（切后台、连点都会这样），先把它收掉
     if (activeRec) { try { activeRec.abort(true); } catch (e) { /* ignore */ } activeRec = null; }
+    // 每次新建独立实例：复用同一个对象时，上一轮的 onend 可能打到新一轮上
     const rec = new SR();
     rec.lang = 'en-US';
     rec.continuous = false;
@@ -930,13 +932,16 @@ function recognizeOnce() {
     const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null, stopped: false };
     let done = false;
     let watch = null;
+    let startWatch = null;
     const t0 = performance.now();
 
     const finish = (reason) => {
       if (done) return;
       done = true;
       clearTimeout(watch);
+      clearTimeout(startWatch);
       if (activeRec === out) activeRec = null;
+      recCooldownUntil = performance.now() + 900;
       out.reason = reason;
       const final = out.text || out.interim;
       out.text = final;
@@ -944,7 +949,7 @@ function recognizeOnce() {
       resolve(out);
     };
 
-    rec.onstart = () => { out.started = true; };
+    rec.onstart = () => { out.started = true; clearTimeout(startWatch); };
     rec.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); };
     rec.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -966,6 +971,10 @@ function recognizeOnce() {
     activeRec = out;
 
     watch = setTimeout(() => { out.abort(false); finish('watchdog'); }, 12000);
+    // 2.5 秒还没真正启动，就当失败（iOS 有时既不报错也不启动）
+    startWatch = setTimeout(() => {
+      if (!out.started && !done) { out.errors.push('no-start'); finish('no-start'); }
+    }, 2500);
 
     try {
       rec.start();
@@ -973,7 +982,18 @@ function recognizeOnce() {
       out.errors.push('start:' + e.name);
       // 切后台回来时，上一个会话可能还没彻底释放，稍等再试一次
       setTimeout(() => {
-        try { rec.start(); } catch (e2) { out.errors.push('retry:' + e2.name); finish('start-failed'); }
+        if (done) return;
+        const fresh = new SR();
+        fresh.lang = 'en-US';
+        fresh.continuous = false;
+        fresh.interimResults = true;
+        fresh.maxAlternatives = 1;
+        fresh.onstart = () => { out.started = true; clearTimeout(startWatch); };
+        fresh.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); };
+        fresh.onresult = rec.onresult;
+        fresh.onerror = (ev) => { out.errors.push(ev.error); };
+        fresh.onend = () => { finish('onend'); };
+        try { fresh.start(); } catch (e2) { out.errors.push('retry:' + e2.name); finish('start-failed'); }
       }, 350);
     }
   });
@@ -981,6 +1001,15 @@ function recognizeOnce() {
 
 function resetMic() {
   if (!micBtn) return;
+  const left = recCooldownUntil - performance.now();
+  if (left > 0) {
+    micBtn.disabled = true;
+    micBtn.classList.remove('on');
+    micBtn.textContent = '🕒 稍等…';
+    clearTimeout(resetMic._t);
+    resetMic._t = setTimeout(resetMic, left + 30);
+    return;
+  }
   micBtn.disabled = false;
   micBtn.classList.remove('on');
   micBtn.textContent = '🎤 点一下开始说';
@@ -1287,6 +1316,7 @@ function renderSpeak(n) {
 
 async function doSpeak(n, isReading) {
   if (run.busy || listening) return;
+  if (performance.now() < recCooldownUntil) { const h = $('hint'); if (h) h.textContent = '麦克风还在释放，稍等一下'; return; }
   const myRun = run;
   const myNode = run.idx;
   run.busy = true;
@@ -1302,10 +1332,9 @@ async function doSpeak(n, isReading) {
   // 麦克风此时打开会录不到任何声音（表现就是"没反应"）。
   stopAudio();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  await sleepMs(500);
-
   if (my !== startToken) { listening = false; run.busy = false; resetMic(); return; }
 
+  // 不在这里 await 等待：iOS 要求 start() 紧跟用户点击，异步等待会让手势失效
   const res = await recognizeOnce();
 
   // 等待期间可能已经换关、退出或切过后台，这时不要再改动状态
@@ -1327,7 +1356,8 @@ async function doSpeak(n, isReading) {
     markHard(run.idx, '');
     const why = res.errors.length
       ? '（识别返回：' + res.errors.join(', ') + '）'
-      : (res.reason === 'watchdog' ? '（等了 12 秒没拿到声音）'
+      : (res.reason === 'no-start' ? '（麦克风没启动，再点一次）'
+        : res.reason === 'watchdog' ? '（等了 12 秒没拿到声音）'
         : (!res.started ? '（识别没有启动成功）' : ''));
     stepDown(n, '没听到你说话。' + why);
     return;
