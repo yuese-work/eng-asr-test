@@ -266,6 +266,7 @@
 
 </div>
 <div class="toast" id="toast"></div>
+<audio id="player" preload="auto"></audio>
 
 <div class="mask hidden" id="quitMask">
   <div class="sheet">
@@ -861,11 +862,37 @@ let currentAudio = null;
 function stopAudio() {
   if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; }
 }
+let player = null;
+function getPlayer() {
+  if (!player) player = document.getElementById('player');
+  return player;
+}
+/* iOS 的自动播放限制：同一个 audio 元素只要被用户手势解锁过一次，
+   之后程序调用 play() 就能播。每次 new Audio() 是没法解锁的。 */
+function unlockAudio() {
+  const a = getPlayer();
+  if (!a || a.dataset.unlocked || a.dataset.unlocking) return;
+  a.dataset.unlocking = '1';
+  a.onended = null;
+  a.onerror = null;
+  a.src = 'audio/silent.mp3';
+  a.volume = 0;
+  const p = a.play();
+  if (p && p.then) {
+    p.then(() => { a.dataset.unlocked = '1'; a.pause(); a.volume = 1; })
+     .catch(() => { a.volume = 1; });
+    if (p.finally) p.finally(() => { delete a.dataset.unlocking; });
+  } else {
+    delete a.dataset.unlocking;
+  }
+}
+document.addEventListener('pointerdown', unlockAudio);
+
 function playAudio(src) {
   return new Promise((resolve) => {
-    if (!window.Audio) { resolve(false); return; }
+    const a = getPlayer();
+    if (!a) { resolve(false); return; }
     stopAudio();
-    const a = new Audio(src);
     currentAudio = a;
     let settled = false;
     const done = (ok) => {
@@ -876,6 +903,9 @@ function playAudio(src) {
     };
     a.onended = () => done(true);
     a.onerror = () => done(false);
+    try { a.pause(); } catch (e) { /* ignore */ }
+    a.src = src;
+    a.currentTime = 0;
     const p = a.play();
     if (p && p.catch) p.catch(() => done(false));
     setTimeout(() => { if (!settled) { try { a.pause(); } catch (e) { /* ignore */ } done(false); } }, 15000);
@@ -930,6 +960,7 @@ function recognizeOnce() {
     rec.maxAlternatives = 1;
 
     const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null, stopped: false };
+    out.rec = rec;
     let done = false;
     let watch = null;
     let startWatch = null;
@@ -942,6 +973,12 @@ function recognizeOnce() {
       clearTimeout(startWatch);
       if (activeRec === out) activeRec = null;
       recCooldownUntil = performance.now() + 900;
+      // 真正释放麦克风：包括重试时新建的那个实例
+      const r = out.rec || rec;
+      try {
+        r.onstart = null; r.onspeechstart = null; r.onresult = null; r.onerror = null; r.onend = null;
+      } catch (e) { /* ignore */ }
+      try { r.abort(); } catch (e) { /* ignore */ }
       out.reason = reason;
       const final = out.text || out.interim;
       out.text = final;
@@ -964,7 +1001,7 @@ function recognizeOnce() {
 
     out.abort = (byUser) => {
       if (byUser) out.stopped = true;
-      try { rec.abort(); } catch (e) { /* 已经结束就算了 */ }
+      try { (out.rec || rec).abort(); } catch (e) { /* 已经结束就算了 */ }
       // iOS 切后台时 onend 可能永远不来，兜一个底，避免 Promise 永远挂着
       setTimeout(() => finish('abort-timeout'), 300);
     };
@@ -993,6 +1030,7 @@ function recognizeOnce() {
         fresh.onresult = rec.onresult;
         fresh.onerror = (ev) => { out.errors.push(ev.error); };
         fresh.onend = () => { finish('onend'); };
+        out.rec = fresh;
         try { fresh.start(); } catch (e2) { out.errors.push('retry:' + e2.name); finish('start-failed'); }
       }, 350);
     }
