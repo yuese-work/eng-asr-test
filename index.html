@@ -428,7 +428,7 @@ const LEVELS = [
       frameFill: '可以填：sightseeing / business / a holiday',
       answer: "I'm here for sightseeing.",
       answerZh: '我是来观光的。',
-      accept: [['sightseeing', 'tourist', 'tourism', 'tour', 'vacation', 'holiday', 'travel']]
+      accept: [['sightseeing', 'tourist', 'tourism', 'tour', 'vacation', 'holiday', 'travel', 'business', 'work', 'study', 'visiting']]
     },
     {
       kind: 'speak',
@@ -1115,7 +1115,19 @@ function hardResetListening() {
    4. 判定：关键词命中，不要求逐字一致
    ============================================================ */
 function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim(); }
-function hasWord(t, k) { return new RegExp('(^|[^a-z])' + k + '([^a-z]|$)', 'i').test(t); }
+function hasWord(t, k) {
+  const exact = new RegExp('(^|[^a-z])' + k + '([^a-z]|$)', 'i').test(t);
+  if (exact) return true;
+  // 识别常把长词说短/说歪：sightsee / sighting / sight seeing 都算 sightseeing
+  const kk = String(k).toLowerCase();
+  for (const w of t.split(' ')) {
+    if (w.length < 4 || kk.length < 4) continue;
+    let p = 0;
+    while (p < w.length && p < kk.length && w[p] === kk[p]) p++;
+    if (p >= 5 && Math.max(w.length, kk.length) >= 7) return true;
+  }
+  return false;
+}
 function judge(accept, text) {
   const t = norm(text);
   if (!t) return false;
