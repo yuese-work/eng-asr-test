@@ -788,6 +788,9 @@ function today() { return new Date().toISOString().slice(0, 10); }
    3. 语音：合成 + 识别（配置来自 iPhone 实测结论）
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* 默认用 iPhone 自带语音：它和语音识别同属系统语音引擎，
+   不会像 <audio> 播放那样抢走录音会话。加 ?mp3=1 才走预生成音频。 */
+const USE_MP3 = new URLSearchParams(location.search).get('mp3') === '1';
 let voices = [];
 
 /* 苹果自带的"玩具音"和早期机器人音，尽量别选到 */
@@ -882,6 +885,7 @@ function getPlayer() {
 /* iOS 的自动播放限制：同一个 audio 元素只要被用户手势解锁过一次，
    之后程序调用 play() 就能播。每次 new Audio() 是没法解锁的。 */
 function unlockAudio() {
+  if (!USE_MP3) return;
   const a = getPlayer();
   if (!a || a.dataset.unlocked || a.dataset.unlocking) return;
   a.dataset.unlocking = '1';
@@ -935,7 +939,7 @@ function nodeAudio(kind, slow) {
 let speakSeq = 0;
 async function speak(text, slow, who, src) {
   const my = ++speakSeq;
-  if (src) {
+  if (src && USE_MP3) {
     const ok = await playAudio(src);
     if (my !== speakSeq) return;
     if (ok) return;
