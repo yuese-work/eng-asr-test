@@ -81,7 +81,9 @@
   .btn:disabled { opacity:.45; }
 
   /* 场景 */
-  .scene { padding:14px 16px 0; }
+  .scene { position:relative; padding:14px 16px 0; }
+  .loglink { position:absolute; right:14px; top:14px; padding:5px 10px; border-radius:12px; background:#151c27; border:1px solid var(--line); color:var(--muted); font:600 11px/1 -apple-system,"PingFang SC",sans-serif; }
+  #diagLog { max-height:46vh; overflow:auto; font-size:11px; line-height:1.45; }
   .scene b { display:block; font-size:15px; }
   .scene small { color:var(--muted); font-size:12px; }
   .talk { padding:10px 16px 0; }
@@ -210,6 +212,7 @@
     <div class="scene">
       <b id="nodeScene">关西机场 · 入境审查</b>
       <small id="nodeProgress">第 1 / 5 个节点</small>
+      <button class="loglink" id="btnLog">日志</button>
     </div>
     <div class="talk">
       <div class="who" id="nodeWho">🛂 海关官员 <em>· Officer Chen</em></div>
@@ -274,6 +277,15 @@
     <p>退出后本关进度不保存，下次要从第 1 个节点重新开始。</p>
     <button id="btnQuitNo">继续玩</button>
     <button class="ghost" id="btnQuitYes">退出到地图</button>
+  </div>
+</div>
+
+<div class="mask hidden" id="logMask">
+  <div class="sheet">
+    <h3>识别日志</h3>
+    <pre id="diagLog"></pre>
+    <button id="btnLogCopy">复制日志</button>
+    <button class="ghost" id="btnLogClose">关闭</button>
   </div>
 </div>
 
@@ -859,18 +871,8 @@ function speakOne(part, slow, v) {
 
 /* 预生成的神经语音优先；没有对应文件时回退到系统语音 */
 let currentAudio = null;
-/* pause() 只是暂停，iOS 上媒体会话还在。要彻底放手，
-   得把 src 摘掉再 load()，输入通道才回得来。 */
-function releasePlayer() {
-  const a = getPlayer();
-  if (!a) return;
-  try { a.pause(); } catch (e) { /* ignore */ }
-  try { a.onended = null; a.onerror = null; } catch (e) { /* ignore */ }
-  try { a.removeAttribute('src'); a.load(); } catch (e) { /* ignore */ }
-}
 function stopAudio() {
-  if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; }
-  releasePlayer();
+  if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; logEvt('audio:stop'); }
 }
 let player = null;
 function getPlayer() {
@@ -911,11 +913,12 @@ function playAudio(src) {
       if (!ok && currentAudio === a) currentAudio = null;
       resolve(ok);
     };
-    a.onended = () => { done(true); releasePlayer(); };
-    a.onerror = () => done(false);
+    a.onended = () => { logEvt('audio:end'); done(true); };
+    a.onerror = () => { logEvt('audio:error'); done(false); };
     try { a.pause(); } catch (e) { /* ignore */ }
     a.src = src;
     a.currentTime = 0;
+    logEvt('audio:play', src.split('/').pop());
     const p = a.play();
     if (p && p.catch) p.catch(() => done(false));
     setTimeout(() => { if (!settled) { try { a.pause(); } catch (e) { /* ignore */ } done(false); } }, 15000);
@@ -960,6 +963,7 @@ let recCooldownUntil = 0;   // 识别结束后 iOS 要一会儿才释放麦克�
 function recognizeOnce() {
   return new Promise((resolve) => {
     if (!SR) { resolve({ ok: false, reason: 'no-api', text: '', errors: ['no-api'] }); return; }
+    logEvt('rec:try', 'node=' + (run ? run.idx : '?'));
     // 上一条会话可能还挂在系统里（切后台、连点都会这样），先把它收掉
     if (activeRec) { try { activeRec.abort(true); } catch (e) { /* ignore */ } activeRec = null; }
     // 每次新建独立实例：复用同一个对象时，上一轮的 onend 可能打到新一轮上
@@ -984,6 +988,7 @@ function recognizeOnce() {
       clearTimeout(startWatch);
       if (activeRec === out) activeRec = null;
       recCooldownUntil = performance.now() + 900;
+      logEvt('rec:finish', reason);
       // 只摘回调。自然结束（onend）不要再补 abort ——
       // iOS 上对已结束的会话再 abort，会把录音会话卡在未关闭状态，
       // 下一轮就会出现"启动了但收不到音频"。
@@ -999,18 +1004,19 @@ function recognizeOnce() {
       resolve(out);
     };
 
-    rec.onstart = () => { out.started = true; clearTimeout(startWatch); };
-    rec.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); };
+    rec.onstart = () => { out.started = true; clearTimeout(startWatch); logEvt('rec:onstart'); };
+    rec.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); logEvt('rec:speech'); };
     rec.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
         if (r.isFinal) out.text += r[0].transcript;
         else out.interim = r[0].transcript;
+        logEvt('rec:result', JSON.stringify(r[0].transcript || ''));
       }
       if (out.text) out.text = out.text.trim();
     };
-    rec.onerror = (e) => { out.errors.push(e.error); };
-    rec.onend = () => { finish('onend'); };
+    rec.onerror = (e) => { out.errors.push(e.error); logEvt('rec:error', e.error); };
+    rec.onend = () => { logEvt('rec:end'); finish('onend'); };
 
     out.abort = (byUser) => {
       if (byUser) out.stopped = true;
@@ -1023,7 +1029,7 @@ function recognizeOnce() {
     watch = setTimeout(() => { out.abort(false); finish('watchdog'); }, 12000);
     // 2.5 秒还没真正启动，就当失败（iOS 有时既不报错也不启动）
     startWatch = setTimeout(() => {
-      if (!out.started && !done) { out.errors.push('no-start'); finish('no-start'); }
+      if (!out.started && !done) { out.errors.push('no-start'); logEvt('rec:no-start'); finish('no-start'); }
     }, 2500);
 
     try {
@@ -1111,6 +1117,15 @@ function judge(accept, text) {
    5. 界面
    ============================================================ */
 const $ = (id) => document.getElementById(id);
+const LOG = [];
+function logEvt(name, extra) {
+  const d = new Date();
+  const t = d.toTimeString().slice(0, 8) + '.' + String(d.getMilliseconds()).padStart(3, '0');
+  LOG.push(t + '  ' + name + (extra ? '  ' + extra : ''));
+  if (LOG.length > 40) LOG.shift();
+  const el = document.getElementById('diagLog');
+  if (el) el.textContent = LOG.join('\n');
+}
 function toast(msg) {
   const el = $('toast');
   el.textContent = msg;
@@ -1368,6 +1383,7 @@ function renderSpeak(n) {
 async function doSpeak(n, isReading) {
   if (run.busy || listening) return;
   if (performance.now() < recCooldownUntil) { const h = $('hint'); if (h) h.textContent = '麦克风还在释放，稍等一下'; return; }
+  logEvt('mic:tap', 'node=' + run.idx);
   const myRun = run;
   const myNode = run.idx;
   run.busy = true;
@@ -1578,6 +1594,21 @@ $('btnVoiceRefresh').onclick = () => {
   toast('找到 ' + voices.length + ' 个英文音色');
 };
 $('btnVoiceTry').onclick = () => speak('Hello. Welcome to Osaka. Have a nice day.', false, 'preview');
+$('btnLog').onclick = () => {
+  $('diagLog').textContent = LOG.join('\n') || '（还没有记录）';
+  $('logMask').classList.remove('hidden');
+};
+$('btnLogClose').onclick = () => $('logMask').classList.add('hidden');
+$('logMask').onclick = (e) => { if (e.target === $('logMask')) $('logMask').classList.add('hidden'); };
+$('btnLogCopy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(LOG.join('\n'));
+    $('btnLogCopy').textContent = '已复制，粘贴发我';
+  } catch (e) {
+    toast('复制失败，请长按上面文字手动选中');
+  }
+  setTimeout(() => { $('btnLogCopy').textContent = '复制日志'; }, 3000);
+};
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
 $('btnDexBack').onclick = renderHome;
