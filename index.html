@@ -956,7 +956,8 @@ function recognizeOnce() {
     const rec = new SR();
     rec.lang = 'en-US';
     rec.continuous = false;
-    rec.interimResults = true;
+    // 用户实测：关掉中间结果时识别更准，音频管线也释放得更干净
+    rec.interimResults = false;
     rec.maxAlternatives = 1;
 
     const out = { ok: false, reason: '', text: '', interim: '', errors: [], reactMs: null, stopped: false };
@@ -973,12 +974,14 @@ function recognizeOnce() {
       clearTimeout(startWatch);
       if (activeRec === out) activeRec = null;
       recCooldownUntil = performance.now() + 900;
-      // 真正释放麦克风：包括重试时新建的那个实例
+      // 只摘回调。自然结束（onend）不要再补 abort ——
+      // iOS 上对已结束的会话再 abort，会把录音会话卡在未关闭状态，
+      // 下一轮就会出现"启动了但收不到音频"。
       const r = out.rec || rec;
       try {
         r.onstart = null; r.onspeechstart = null; r.onresult = null; r.onerror = null; r.onend = null;
       } catch (e) { /* ignore */ }
-      try { r.abort(); } catch (e) { /* ignore */ }
+      if (reason === 'no-start') { try { r.abort(); } catch (e) { /* ignore */ } }
       out.reason = reason;
       const final = out.text || out.interim;
       out.text = final;
@@ -1023,7 +1026,7 @@ function recognizeOnce() {
         const fresh = new SR();
         fresh.lang = 'en-US';
         fresh.continuous = false;
-        fresh.interimResults = true;
+        fresh.interimResults = false;
         fresh.maxAlternatives = 1;
         fresh.onstart = () => { out.started = true; clearTimeout(startWatch); };
         fresh.onspeechstart = () => { out.reactMs = Math.round(performance.now() - t0); };
