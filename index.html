@@ -859,8 +859,18 @@ function speakOne(part, slow, v) {
 
 /* 预生成的神经语音优先；没有对应文件时回退到系统语音 */
 let currentAudio = null;
+/* pause() 只是暂停，iOS 上媒体会话还在。要彻底放手，
+   得把 src 摘掉再 load()，输入通道才回得来。 */
+function releasePlayer() {
+  const a = getPlayer();
+  if (!a) return;
+  try { a.pause(); } catch (e) { /* ignore */ }
+  try { a.onended = null; a.onerror = null; } catch (e) { /* ignore */ }
+  try { a.removeAttribute('src'); a.load(); } catch (e) { /* ignore */ }
+}
 function stopAudio() {
   if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; }
+  releasePlayer();
 }
 let player = null;
 function getPlayer() {
@@ -901,7 +911,7 @@ function playAudio(src) {
       if (!ok && currentAudio === a) currentAudio = null;
       resolve(ok);
     };
-    a.onended = () => done(true);
+    a.onended = () => { done(true); releasePlayer(); };
     a.onerror = () => done(false);
     try { a.pause(); } catch (e) { /* ignore */ }
     a.src = src;
