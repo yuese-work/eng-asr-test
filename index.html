@@ -134,6 +134,7 @@
   .lvrow span { font-size:11px; color:var(--muted); }
   .lvrow em { font-style:normal; font-size:12px; color:var(--amber); }
   .voiceSel { width:100%; padding:12px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:#e7edf6; font:15px/1 -apple-system,"PingFang SC",sans-serif; }
+  .voiceAudit { margin:10px 0 0; padding:10px; max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word; user-select:text; background:#10161f; border:1px solid var(--line); border-radius:10px; color:var(--muted); font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
   .fixrow { background:#10161f; border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:9px; }
   .fixrow em { font-style:normal; font-size:11px; color:var(--muted); display:block; }
   .fixrow p { margin:2px 0 0; font-size:16px; }
@@ -194,7 +195,10 @@
           <button class="btn ghost" id="btnVoiceRefresh" style="flex:1;margin:0">刷新音色</button>
           <button class="btn ghost" id="btnVoiceTry" style="flex:1;margin:0">试听一句</button>
         </div>
+        <button class="btn ghost" id="btnVoiceDump" style="margin:8px 0 0">复制完整音色清单（诊断）</button>
+        <pre class="voiceAudit hidden" id="voiceAudit"></pre>
         <p class="muted" id="voiceHint" style="font-size:12px;margin:8px 0 0"></p>
+        <p class="muted" id="audioModeHint" style="font-size:12px;margin:8px 0 0"></p>
         <p class="muted" style="font-size:12px;margin:10px 0 0;line-height:1.6">
           想更好听：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，下载 Enhanced 或 Premium 音色，再回到这里选。
         </p>
@@ -788,10 +792,16 @@ function today() { return new Date().toISOString().slice(0, 10); }
    3. 语音：合成 + 识别（配置来自 iPhone 实测结论）
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-/* 默认用 iPhone 自带语音：它和语音识别同属系统语音引擎，
-   不会像 <audio> 播放那样抢走录音会话。加 ?mp3=1 才走预生成音频。 */
-const USE_MP3 = new URLSearchParams(location.search).get('mp3') === '1';
+/* 默认用 iPhone 自带语音。诊断时可用 ?audio=html 或 ?audio=wa 做 A/B/C 对比；
+   ?mp3=1 保留为旧链接兼容，等同于 ?audio=html。 */
+const QUERY = new URLSearchParams(location.search);
+const AUDIO_MODE = (() => {
+  const requested = QUERY.get('audio');
+  if (requested === 'system' || requested === 'html' || requested === 'wa') return requested;
+  return QUERY.get('mp3') === '1' ? 'html' : 'system';
+})();
 let voices = [];
+const VOICE_SNAPSHOTS = [];
 
 /* 苹果自带的"玩具音"和早期机器人音，尽量别选到 */
 const NOVELTY = /^(aaron|fred|albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|organ|ralph|trinoids|whisper|wobble|zarvox|junior|kathy|princess|superstar)$/i;
@@ -818,17 +828,57 @@ function voiceLabel(v) {
   return (v.name || '未命名') + '（' + (v.lang || '?') + '）' + tag;
 }
 
-function refreshVoices() {
+function captureVoiceAudit(stage) {
+  if (!window.speechSynthesis) return;
+  const all = window.speechSynthesis.getVoices();
+  const signature = all.map((v) => [
+    v.name || '', v.lang || '', v.voiceURI || '', !!v.localService, !!v.default
+  ].join('|')).join('\n');
+  const last = VOICE_SNAPSHOTS[VOICE_SNAPSHOTS.length - 1];
+  if (last && last.signature === signature) return;
+  VOICE_SNAPSHOTS.push({ stage: stage, at: new Date().toISOString(), voices: all.slice(), signature: signature });
+  if (VOICE_SNAPSHOTS.length > 6) VOICE_SNAPSHOTS.shift();
+}
+
+function voiceAuditText() {
+  const lines = [
+    'url=' + location.href,
+    'audioMode=' + AUDIO_MODE,
+    'ua=' + navigator.userAgent
+  ];
+  VOICE_SNAPSHOTS.forEach((snap) => {
+    lines.push('');
+    lines.push('snapshot=' + snap.stage + ' at=' + snap.at + ' count=' + snap.voices.length);
+    if (!snap.voices.length) lines.push('(empty)');
+    snap.voices.forEach((v, i) => {
+      lines.push([
+        String(i + 1) + '.',
+        'name=' + (v.name || '?'),
+        'lang=' + (v.lang || '?'),
+        'uri=' + (v.voiceURI || '?'),
+        'default=' + !!v.default,
+        'local=' + !!v.localService
+      ].join(' | '));
+    });
+  });
+  return lines.join('\n');
+}
+
+function refreshVoices(stage) {
   if (!window.speechSynthesis) return;
   voices = window.speechSynthesis.getVoices()
     .filter((v) => /^en/i.test(v.lang || ''))
     .map((v) => ({ v: v, s: voiceScore(v) }))
     .sort((a, b) => b.s - a.s)
     .map((x) => x.v);
+  captureVoiceAudit(stage || 'refresh');
 }
-refreshVoices();
+refreshVoices('initial');
 if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
-  window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+  window.speechSynthesis.addEventListener('voiceschanged', () => {
+    refreshVoices('voiceschanged');
+    if (document.getElementById('voiceSel')) fillVoiceSelect();
+  });
 }
 
 /* 同一个角色永远用同一个声音，不同角色尽量换人 */
@@ -874,18 +924,66 @@ function speakOne(part, slow, v) {
 
 /* 预生成的神经语音优先；没有对应文件时回退到系统语音 */
 let currentAudio = null;
-function stopAudio() {
-  if (currentAudio) { try { currentAudio.pause(); } catch (e) { /* ignore */ } currentAudio = null; logEvt('audio:stop'); }
+let currentAudioNode = null;
+let currentPlaybackCancel = null;
+let audioContext = null;
+const audioBuffers = new Map();
+
+function stopAudio(invalidateSpeak) {
+  let stopped = false;
+  if (currentAudio) {
+    try { currentAudio.pause(); } catch (e) { /* ignore */ }
+    currentAudio = null;
+    stopped = true;
+  }
+  if (currentAudioNode) {
+    try { currentAudioNode.stop(); } catch (e) { /* ignore */ }
+    try { currentAudioNode.disconnect(); } catch (e) { /* ignore */ }
+    currentAudioNode = null;
+    stopped = true;
+  }
+  if (currentPlaybackCancel) {
+    const cancel = currentPlaybackCancel;
+    currentPlaybackCancel = null;
+    if (invalidateSpeak !== false) speakSeq++;
+    cancel();
+    stopped = true;
+  }
+  if (stopped) logEvt('audio:stop');
 }
 let player = null;
 function getPlayer() {
   if (!player) player = document.getElementById('player');
   return player;
 }
+
+function getAudioContext() {
+  if (audioContext) return audioContext;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try {
+    audioContext = new AC();
+    logEvt('wa:ctx', audioContext.state || 'unknown');
+  } catch (e) {
+    logEvt('wa:ctx-error', e.name || 'Error');
+    return null;
+  }
+  return audioContext;
+}
+
 /* iOS 的自动播放限制：同一个 audio 元素只要被用户手势解锁过一次，
    之后程序调用 play() 就能播。每次 new Audio() 是没法解锁的。 */
 function unlockAudio() {
-  if (!USE_MP3) return;
+  if (AUDIO_MODE === 'system') return;
+  if (AUDIO_MODE === 'wa') {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state !== 'running' && ctx.resume) {
+      ctx.resume()
+        .then(() => logEvt('wa:resume', ctx.state))
+        .catch((e) => logEvt('wa:resume-error', e.name || 'Error'));
+    }
+    return;
+  }
   const a = getPlayer();
   if (!a || a.dataset.unlocked || a.dataset.unlocking) return;
   a.dataset.unlocking = '1';
@@ -908,15 +1006,17 @@ function playAudio(src) {
   return new Promise((resolve) => {
     const a = getPlayer();
     if (!a) { resolve(false); return; }
-    stopAudio();
+    stopAudio(false);
     currentAudio = a;
     let settled = false;
     const done = (ok) => {
       if (settled) return;
       settled = true;
       if (!ok && currentAudio === a) currentAudio = null;
+      if (currentPlaybackCancel) currentPlaybackCancel = null;
       resolve(ok);
     };
+    currentPlaybackCancel = () => done(false);
     a.onended = () => { logEvt('audio:end'); done(true); };
     a.onerror = () => { logEvt('audio:error'); done(false); };
     try { a.pause(); } catch (e) { /* ignore */ }
@@ -929,6 +1029,57 @@ function playAudio(src) {
   });
 }
 
+async function loadAudioBuffer(ctx, src) {
+  if (audioBuffers.has(src)) return audioBuffers.get(src);
+  logEvt('wa:fetch', src.split('/').pop());
+  const res = await fetch(src, { cache: 'force-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const raw = await res.arrayBuffer();
+  const buf = await new Promise((resolve, reject) => {
+    const p = ctx.decodeAudioData(raw, resolve, reject);
+    if (p && p.then) p.then(resolve, reject);
+  });
+  audioBuffers.set(src, buf);
+  logEvt('wa:decode', Math.round(buf.duration * 1000) + 'ms');
+  return buf;
+}
+
+async function playWebAudio(src) {
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  try {
+    if (ctx.state !== 'running' && ctx.resume) {
+      await ctx.resume();
+      logEvt('wa:resume', ctx.state);
+    }
+    const buf = await loadAudioBuffer(ctx, src);
+    return await new Promise((resolve) => {
+      stopAudio(false);
+      const node = ctx.createBufferSource();
+      currentAudioNode = node;
+      let settled = false;
+      const done = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (currentAudioNode === node) currentAudioNode = null;
+        if (currentPlaybackCancel) currentPlaybackCancel = null;
+        try { node.disconnect(); } catch (e) { /* ignore */ }
+        resolve(ok);
+      };
+      currentPlaybackCancel = () => done(false);
+      node.buffer = buf;
+      node.connect(ctx.destination);
+      node.onended = () => { logEvt('wa:end'); done(true); };
+      logEvt('wa:play', src.split('/').pop());
+      node.start(0);
+      setTimeout(() => { if (!settled) { try { node.stop(); } catch (e) { /* ignore */ } done(false); } }, 15000);
+    });
+  } catch (e) {
+    logEvt('wa:error', e.name || e.message || 'Error');
+    return false;
+  }
+}
+
 /* 当前关卡/节点的音频文件名 */
 function nodeAudio(kind, slow) {
   if (!L || !run) return null;
@@ -939,10 +1090,13 @@ function nodeAudio(kind, slow) {
 let speakSeq = 0;
 async function speak(text, slow, who, src) {
   const my = ++speakSeq;
-  if (src && USE_MP3) {
-    const ok = await playAudio(src);
+  logEvt('audio:mode=' + AUDIO_MODE, src ? src.split('/').pop() : 'tts');
+  if (src && AUDIO_MODE !== 'system') {
+    const ok = AUDIO_MODE === 'wa' ? await playWebAudio(src) : await playAudio(src);
     if (my !== speakSeq) return;
     if (ok) return;
+    if (my !== speakSeq) return;
+    logEvt('audio:fallback', AUDIO_MODE);
   }
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -975,7 +1129,11 @@ function ensureRecognizer() {
   recognizer.interimResults = false;
   recognizer.maxAlternatives = 1;
   recognizer.onstart = () => { if (activeRec) activeRec.handle('start'); };
+  recognizer.onaudiostart = () => { if (activeRec) activeRec.handle('audiostart'); };
+  recognizer.onsoundstart = () => { if (activeRec) activeRec.handle('soundstart'); };
   recognizer.onspeechstart = () => { if (activeRec) activeRec.handle('speech'); };
+  recognizer.onspeechend = () => { if (activeRec) activeRec.handle('speechend'); };
+  recognizer.onaudioend = () => { if (activeRec) activeRec.handle('audioend'); };
   recognizer.onresult = (e) => { if (activeRec) activeRec.handle('result', e); };
   recognizer.onerror = (e) => { if (activeRec) activeRec.handle('error', e); };
   recognizer.onend = () => { if (activeRec) activeRec.handle('end'); };
@@ -1018,6 +1176,8 @@ function recognizeOnce() {
       if (done) return;
       if (type === 'start') {
         out.started = true; clearTimeout(startWatch); logEvt('rec:onstart');
+      } else if (type === 'audiostart' || type === 'soundstart' || type === 'speechend' || type === 'audioend') {
+        logEvt('rec:' + type);
       } else if (type === 'speech') {
         out.reactMs = Math.round(performance.now() - t0); logEvt('rec:speech');
       } else if (type === 'result') {
@@ -1262,10 +1422,10 @@ function renderHome() {
 
 /* 系统里下载了新音色后，Safari 不一定立刻推给网页，所以留一个手动刷新 */
 function fillVoiceSelect() {
-  refreshVoices();
+  refreshVoices('select');
   const sel = $('voiceSel');
   if (!sel) return;
-  if (S.voiceURI && !voices.some((v) => voiceKey(v) === S.voiceURI)) S.voiceURI = '';
+  if (S.voiceURI && voices.length && !voices.some((v) => voiceKey(v) === S.voiceURI)) S.voiceURI = '';
   sel.innerHTML = '<option value="">自动（按角色挑最好的）</option>' +
     voices.map((v) => '<option value="' + esc(voiceKey(v)) + '">' + esc(voiceLabel(v)) + '</option>').join('');
   sel.value = S.voiceURI || '';
@@ -1276,6 +1436,14 @@ function fillVoiceSelect() {
     const enhanced = voices.filter((v) => /premium|neural|enhanced/i.test((v.voiceURI || '') + ' ' + v.name)).length;
     hint.textContent = '系统向网页开放了 ' + voices.length + ' 个英文音色' +
       (enhanced ? '，其中 ' + enhanced + ' 个是增强版' : '（没有检测到增强版）') + '。';
+  }
+  const auditEl = $('voiceAudit');
+  if (auditEl) auditEl.textContent = voiceAuditText();
+  const modeEl = $('audioModeHint');
+  if (modeEl) {
+    const label = { system: '系统语音（A）', html: 'HTMLAudio mp3（B）', wa: 'Web Audio mp3（C）' }[AUDIO_MODE];
+    modeEl.textContent = '当前播放通道：' + label +
+      (AUDIO_MODE === 'system' ? '。' : '。系统音色下拉框不影响这条诊断通道。');
   }
 }
 
@@ -1614,7 +1782,23 @@ $('btnVoiceRefresh').onclick = () => {
   fillVoiceSelect();
   toast('找到 ' + voices.length + ' 个英文音色');
 };
-$('btnVoiceTry').onclick = () => speak('Hello. Welcome to Osaka. Have a nice day.', false, 'preview');
+$('btnVoiceTry').onclick = () => speak(
+  'Hello. Welcome to Osaka. Have a nice day.',
+  false,
+  'preview',
+  'audio/voices/en-US-AvaNeural.mp3'
+);
+$('btnVoiceDump').onclick = async () => {
+  const text = voiceAuditText();
+  $('voiceAudit').textContent = text;
+  $('voiceAudit').classList.remove('hidden');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('完整音色清单已复制');
+  } catch (e) {
+    toast('自动复制失败，请长按下面清单手动复制');
+  }
+};
 $('btnLog').onclick = () => {
   $('diagLog').textContent = LOG.join('\n') || '（还没有记录）';
   $('logMask').classList.remove('hidden');
@@ -1692,6 +1876,7 @@ window.addEventListener('pagehide', () => {
 });
 
 window.addEventListener('orientationchange', () => window.scrollTo(0, 0));
+logEvt('audio:mode=' + AUDIO_MODE, 'startup');
 renderHome();
 </script>
 </body>
