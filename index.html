@@ -46,7 +46,7 @@
   .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
 
   /* 场景图：只交代"你在哪"，不提供任何答案信息 */
-  .sceneimg { position:relative; height:158px; overflow:hidden; background:#0d131d; border-bottom:1px solid var(--line); }
+  .sceneimg { position:relative; height:118px; overflow:hidden; background:#0d131d; border-bottom:1px solid var(--line); }
   .sceneimg img { display:block; width:100%; height:100%; object-fit:cover; object-position:50% 55%; }
   .backbtn {
     position:absolute; top:10px; left:10px; padding:8px 13px; border-radius:18px;
@@ -94,7 +94,7 @@
   .zh { color:var(--muted); font-size:13px; margin-top:8px; }
   .playrow { display:flex; gap:8px; margin-top:12px; }
   .playrow button {
-    flex:1; padding:9px; border-radius:9px; font:600 13px/1 inherit;
+    flex:1; padding:9px 4px; border-radius:9px; font:600 12px/1 inherit; white-space:nowrap;
     background:rgba(240,180,41,.1); border:1px solid rgba(240,180,41,.3); color:var(--amber);
   }
   .said { border-left:3px solid var(--green); padding:9px 12px; margin:12px 0 0; background:rgba(78,201,127,.07); border-radius:0 8px 8px 0; }
@@ -103,6 +103,25 @@
   .tip { border:1px dashed #6b5320; background:#1d1a10; border-radius:12px; padding:12px 14px; margin-top:12px; }
   .tip b { color:var(--amber); font-size:13px; }
   .tip p { margin:6px 0 0; font-size:15px; color:#e4d5ae; }
+  .narr { background:#111a26; border-left:3px solid #4a6f96; border-radius:0 10px 10px 0; padding:9px 12px; margin:0 0 10px; }
+  .narr p { margin:0; font-size:14px; line-height:1.45; color:#c9d6e6; font-style:italic; }
+  .narr .narrzh { font-style:normal; color:var(--muted); font-size:13px; margin-top:6px; }
+  .narr button { margin-top:8px; padding:4px 10px; border-radius:14px; background:rgba(240,180,41,.1); border:1px solid rgba(240,180,41,.28); color:var(--amber); font:600 11px/1 inherit; }
+  .chunk { background:#10161f; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:9px; }
+  .chunk .ck { font-size:16px; font-weight:700; color:#ffd479; }
+  .chunk .cz { font-size:14px; color:#c2ccdd; margin-top:3px; }
+  .chunk .cn { font-size:12px; color:var(--muted); margin-top:5px; line-height:1.5; }
+  .chunk .cf { font-size:13px; color:#9db4e0; margin-top:6px; }
+  .chunk .cb { display:inline-block; margin-top:8px; padding:5px 11px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); color:var(--amber); font:600 11px/1 inherit; }
+  .drillq { font-size:19px; line-height:1.5; margin:12px 0; }
+  .drillq u { color:var(--amber); text-decoration:none; border-bottom:2px solid var(--amber); padding:0 22px; }
+  .drill input { width:100%; padding:14px; border-radius:10px; border:1px solid var(--line); background:#0d131d; color:#e7edf6; font:17px/1.2 inherit; }
+  .drill .fb { margin-top:10px; font-size:15px; }
+  .drill .ok { color:var(--green); }
+  .drill .no { color:var(--red); }
+  .fillrow { display:flex; gap:8px; margin-top:10px; }
+  .fillrow input { flex:1; min-width:0; padding:11px; border-radius:9px; border:1px solid var(--line); background:#0c121b; color:#e7edf6; font:15px/1 inherit; }
+  .fillrow button { padding:11px 14px; border-radius:9px; border:0; background:var(--amber); color:#171017; font:700 14px/1 inherit; }
   .opts { margin:0; padding:0; list-style:none; }
   .opts li { padding:14px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); margin-bottom:9px; font-size:15px; }
   .opts li b { color:var(--amber); margin-right:9px; }
@@ -220,6 +239,11 @@
     </div>
     <div class="talk">
       <div class="who" id="nodeWho">🛂 海关官员 <em>· Officer Chen</em></div>
+      <div class="narr hidden" id="nodeNarr">
+        <p id="narrEn"></p>
+        <button id="btnNarrTrans">译 翻译</button>
+        <p class="narrzh hidden" id="narrZh"></p>
+      </div>
       <div class="bubble">
         <div class="en" id="nodeEn">—</div>
         <div class="zh hidden" id="nodeZh"></div>
@@ -227,8 +251,10 @@
           <button id="btnPlay">🔊 听一遍</button>
           <button id="btnSlow">🐢 慢速</button>
           <button id="btnTrans">译 翻译</button>
+          <button id="btnChunks" class="hidden">✂️ 拆句</button>
         </div>
       </div>
+      <div id="chunkPanel"></div>
       <div id="feedback"></div>
     </div>
     <div class="act" id="nodeAct"></div>
@@ -257,7 +283,25 @@
         <div id="resMistakes"></div>
       </div>
 
+      <button class="btn" id="btnDrill" style="margin-bottom:10px">📝 今日巩固 · 听音填空</button>
       <button class="btn" id="btnHome">回到地图</button>
+    </div>
+  </div>
+
+  <!-- ============ 课后听音填空 ============ -->
+  <div id="screenDrill" class="hidden">
+    <div class="pad">
+      <h1>今日巩固</h1>
+      <p class="muted" id="drillMeta"></p>
+      <div class="card drill">
+        <button class="btn ghost" id="btnDrillPlay">🔊 听一遍</button>
+        <div class="drillq" id="drillQ"></div>
+        <input id="drillInput" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入缺的词">
+        <button class="btn" id="btnDrillCheck" style="margin-top:10px">检查</button>
+        <div class="fb" id="drillFb"></div>
+        <button class="btn ghost hidden" id="btnDrillNext" style="margin-top:10px">下一题 ▶</button>
+      </div>
+      <button class="btn ghost" id="btnDrillExit">结束，回到结算</button>
     </div>
   </div>
 
@@ -267,6 +311,8 @@
       <h1>词汇图鉴</h1>
       <p class="muted">四级大纲 <span id="dexTotal">4615</span> 词 · 已收集 <span id="dexCount2">0</span></p>
       <div id="dexList"></div>
+      <h2 style="margin-top:20px">语块</h2>
+      <div id="dexChunks"></div>
       <button class="btn ghost" id="btnDexBack">返回</button>
     </div>
   </div>
@@ -396,6 +442,20 @@ const WORDS = {
   outside:      { ipa:'[ˈautˈsaid]',       def:'n. 外部　a. 外部的',   eg:'The car is outside.' },
 };
 
+/* 语块：按「意思」成块，不按语法成分拆 */
+const CHUNKS = {
+  "here it is":            { zh:'在这儿；给你', note:'把东西递过去时的固定说法，别逐词翻成"这里它是"。', frame:'Sure, here it is.', ex:'Sure, here it is.' },
+  "that's me":             { zh:'就是我；是我', note:'别人叫名字或在找你时的标准回应。', frame:"Yes, that's me.", ex:"Yes, that's me." },
+  "i'm here for":          { zh:'我是来……的', note:'说明目的。后面接名词：sightseeing / business / a holiday。', frame:"I'm here for ___ .", ex:"I'm here for sightseeing." },
+  "can i see":             { zh:'我能看一下……吗', note:'礼貌地要求出示某物。', frame:'Can I see your ___ ?', ex:'Can I see your baggage tag?' },
+  "can i help you":        { zh:'需要帮忙吗', note:'工作人员的开场白，不是在问你"能不能帮我"。', frame:'Can I help you?', ex:'Can I help you?' },
+  "look like":             { zh:'看起来像；长什么样', note:'这里 look 不是"看"，like 也不是"喜欢"。整个短语问外观。', frame:'What does ___ look like?', ex:'What does your bag look like?' },
+  "would you like us to":  { zh:'你要我们……吗', note:'like 不是"喜欢"，是"想要"；这是礼貌的提议。', frame:'Would you like us to ___ ?', ex:'Would you like us to send it to your hotel?' },
+  "sorry for the wait":    { zh:'让您久等了', note:'固定道歉语，不是"为等待感到难过"。', frame:'Sorry for the wait.', ex:'Sorry for the wait. This way, please.' },
+  "this way, please":      { zh:'这边请', note:'带路时的固定说法。', frame:'This way, please.', ex:'This way, please.' },
+  "at gate two":           { zh:'在 2 号门', note:'地点表达：at + 地点。', frame:'He is at ___ .', ex:'He says he is at gate two.' }
+};
+
 /* ============================================================
    1. 关卡数据
    ============================================================ */
@@ -415,6 +475,8 @@ const LEVELS = [
       who: '🛂 海关官员 · Officer Chen',
       en: 'Next, please. Passport and arrival card.',
       zh: '下一位。护照和入境卡。',
+      narration: 'The line moves quickly. An officer waves you forward.',
+      narrationZh: '队伍移动得很快。一名官员示意你上前。',
       words: ['passport', 'arrival', 'document', 'form'],
       options: [
         { text: '出示护照和入境卡', ok: true },
@@ -427,6 +489,9 @@ const LEVELS = [
       who: '🛂 海关官员 · Officer Chen',
       en: "What's the purpose of your visit?",
       zh: '你这次来的目的是什么？',
+      narration: 'He checks your passport, then looks up at you.',
+      narrationZh: '他看了看你的护照，然后抬头看你。',
+      chunks: ["i'm here for"],
       words: ['purpose', 'visit', 'sightseeing', 'business', 'holiday', 'journey'],
       frame: "I'm here for ___ .",
       frameFill: '可以填：sightseeing / business / a holiday',
@@ -451,6 +516,8 @@ const LEVELS = [
       who: '🛂 海关官员 · Officer Chen',
       en: 'Where will you be staying?',
       zh: '你住哪里？',
+      narration: 'He writes something down and asks another question.',
+      narrationZh: '他记下了点什么，又问了一个问题。',
       words: ['hotel', 'address', 'stay', 'destination'],
       frame: "I'm staying at ___ in ___ .",
       frameFill: '可以填：a hotel / the Hilton　Osaka / Tokyo',
@@ -463,6 +530,7 @@ const LEVELS = [
       who: '🛂 海关官员 · Officer Chen',
       en: 'Do you have a return ticket?',
       zh: '你有回程机票吗？',
+      chunks: ['here it is'],
       words: ['return', 'ticket', 'flight', 'departure'],
       frame: 'Yes, ___ .',
       frameFill: '可以填：here it is / I do / here you go',
@@ -485,6 +553,8 @@ const LEVELS = [
       who: '📢 机场广播 · Announcement',
       en: 'Passengers on flight CA123, your bags are on belt three.',
       zh: '乘坐 CA123 航班的旅客，您的行李在 3 号传送带。',
+      narration: 'You walk into the baggage hall. Bags are moving on the belt.',
+      narrationZh: '你走进行李大厅。行李正在传送带上移动。',
       words: ['flight', 'bag', 'baggage', 'belt', 'announce'],
       options: [
         { text: '去 3 号传送带', ok: true },
@@ -497,6 +567,7 @@ const LEVELS = [
       who: '🧳 行李区工作人员 · Staff',
       en: 'Can I see your baggage tag?',
       zh: '能给我看一下你的行李牌吗？',
+      chunks: ['can i see', 'here it is'],
       words: ['baggage', 'tag', 'label', 'claim'],
       frame: 'Sure, ___ .',
       frameFill: '可以填：here it is / here you go',
@@ -509,6 +580,9 @@ const LEVELS = [
       who: '🧳 行李区工作人员 · Staff',
       en: 'Can I help you?',
       zh: '需要帮忙吗？',
+      narration: 'The belt is empty now. Your bag never came.',
+      narrationZh: '传送带已经空了，你的行李一直没出来。',
+      chunks: ['can i help you'],
       words: ['help', 'service', 'missing', 'lose', 'report'],
       frame: 'My bag is ___ .',
       frameFill: '可以填：missing / lost / not here',
@@ -521,6 +595,9 @@ const LEVELS = [
       who: '🧳 行李区工作人员 · Staff',
       en: 'What does your bag look like?',
       zh: '你的行李长什么样？',
+      narration: 'He takes out a form and a pen.',
+      narrationZh: '他拿出一张表和一支笔。',
+      chunks: ['look like'],
       words: ['describe', 'bag', 'black', 'blue', 'large', 'small', 'handle', 'weight', 'size'],
       frame: "It's a ___ .",
       frameFill: '可以填：big black bag / small blue bag',
@@ -533,6 +610,7 @@ const LEVELS = [
       who: '🧳 行李区工作人员 · Staff',
       en: 'Would you like us to send it to your hotel?',
       zh: '要我们把它送到你的酒店吗？',
+      chunks: ['would you like us to'],
       words: ['help', 'service', 'report', 'customer'],
       frame: 'Yes, ___ .',
       frameFill: '可以填：please / that would be great',
@@ -559,6 +637,8 @@ const LEVELS = [
       who: '📢 机场广播 · Announcement',
       en: 'Welcome to Osaka. The exit is straight ahead.',
       zh: '欢迎来到大阪。出口一直往前走。',
+      narration: 'You walk out of customs into the arrival hall. People are holding signs.',
+      narrationZh: '你走出海关，来到到达大厅。很多人举着牌子。',
       words: ['welcome', 'exit', 'straight', 'ahead'],
       options: [
         { text: '一直往前走', ok: true },
@@ -572,6 +652,7 @@ const LEVELS = [
       who: '🧑‍💼 接机的人 · Mr. Sato',
       en: 'Excuse me. Are you Mr. Wang?',
       zh: '打扰一下，您是王先生吗？',
+      chunks: ["that's me"],
       words: ['excuse', 'name', 'meet'],
       frame: 'Yes, ___ .',
       frameFill: '可以填：that’s me / I am',
@@ -611,6 +692,8 @@ const LEVELS = [
       who: '🧑‍💼 接机的人 · Mr. Sato',
       en: "Sorry, that's not my passenger.",
       zh: '抱歉，那不是我要接的人。',
+      narration: 'He looks at his sign again, then shakes his head.',
+      narrationZh: '他又看了一眼牌子，然后摇了摇头。',
       words: ['sorry', 'passenger', 'another', 'other'],
       options: [
         { text: '他认错人了', ok: true },
@@ -624,6 +707,8 @@ const LEVELS = [
       who: '🧑‍💼 接机的人 · Mr. Sato',
       en: 'Do you need help?',
       zh: '需要帮忙吗？',
+      narration: 'He points to the information desk and waits for you.',
+      narrationZh: '他指了指问询处，等着你回答。',
       words: ['help', 'find', 'driver'],
       frame: "Yes, please. I'm looking for ___ .",
       frameFill: '可以填：my driver / my hotel bus',
@@ -649,6 +734,7 @@ const LEVELS = [
       who: 'ℹ️ 问询处 · Information desk',
       en: 'He says he is at gate two.',
       zh: '他说他在 2 号门。',
+      chunks: ['at gate two'],
       words: ['gate', 'say', 'wait'],
       frame: 'So I should go to ___ .',
       frameFill: '可以填：gate two / gate 2',
@@ -716,6 +802,7 @@ const LEVELS = [
       who: '🚗 司机 · Mr. Tanaka',
       en: 'Are you Mr. Wang? I am your driver.',
       zh: '您是王先生吗？我是您的司机。',
+      chunks: ["that's me"],
       words: ['driver', 'meet', 'wait'],
       frame: "Yes, that's me. I'm ___ .",
       frameFill: '可以填：looking for you / here for the pickup',
@@ -729,6 +816,7 @@ const LEVELS = [
       who: '🚗 司机 · Mr. Tanaka',
       en: 'Sorry for the wait. This way, please.',
       zh: '让您久等了。这边请。',
+      chunks: ['sorry for the wait', 'this way, please'],
       words: ['sorry', 'wait', 'please', 'ready'],
       frame: 'No problem. ___ .',
       frameFill: '可以填：thank you / let’s go',
@@ -767,12 +855,13 @@ function loadState() {
       if (s && s.v === 1) return s;
     }
   } catch (e) { /* 存档损坏就当新档 */ }
-  return { v: 1, vocab: {}, level: {}, mistakes: [], best: null };
+  return { v: 1, vocab: {}, chunks: {}, level: {}, mistakes: [], best: null };
 }
 function saveState() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('存档失败：浏览器存储被禁用'); }
 }
 let S = loadState();
+if (!S.chunks) S.chunks = {};
 
 /* 音标渐隐：见过 4 次、或连续读对 2 次，就藏起来 */
 function ipaHidden(w) {
@@ -1315,7 +1404,7 @@ function toast(msg) {
   el._t = setTimeout(() => el.classList.remove('show'), 1800);
 }
 function show(id) {
-  ['screenHome', 'screenNode', 'screenResult', 'screenDex'].forEach((s) => $(s).classList.add('hidden'));
+  ['screenHome', 'screenNode', 'screenResult', 'screenDex', 'screenDrill'].forEach((s) => $(s).classList.add('hidden'));
   $(id).classList.remove('hidden');
   window.scrollTo(0, 0);
 }
@@ -1455,6 +1544,17 @@ function renderDex() {
     ? list.map(wordCard).join('')
     : '<p class="muted">还没有收集到词。玩一次第一关就会有。</p>';
   bindCards($('dexList'));
+  const ck = Object.keys(S.chunks || {});
+  $('dexChunks').innerHTML = ck.length ? ck.map((k) => {
+    const c = CHUNKS[k];
+    if (!c) return '';
+    return '<div class="chunk">' +
+      '<div class="ck">' + esc(chunkTitle(k)) + '</div>' +
+      '<div class="cz">' + esc(c.zh) + '</div>' +
+      '<div class="cn">' + esc(c.note) + '</div>' +
+      '<div class="cf">' + esc(c.frame) + '</div>' +
+    '</div>';
+  }).join('') : '<p class="muted">还没有收集到语块。</p>';
   show('screenDex');
 }
 
@@ -1486,6 +1586,7 @@ function startLevel(id) {
 
 function renderNode() {
   const n = L.nodes[run.idx];
+  const myIdx = run.idx;
   renderMap($('mapNode'), L.at);
   $('nodeScene').textContent = L.scene;
   $('nodeProgress').textContent = '第 ' + (LEVELS.indexOf(L) + 1) + ' 关 · 第 ' + (run.steps + 1) + ' 步' +
@@ -1498,8 +1599,19 @@ function renderNode() {
   $('nodeZh').classList.add('hidden');
   $('btnTrans').textContent = '译 翻译';
   $('feedback').innerHTML = '';
+  $('chunkPanel').innerHTML = '';
   run.usedTrans = false;
   run.attempts = 0;
+
+  renderNarration(n);
+  const hasChunks = !!(n.chunks && n.chunks.length);
+  $('btnChunks').classList.toggle('hidden', !hasChunks);
+  $('btnChunks').textContent = '✂️ 拆句';
+  $('btnChunks').onclick = () => toggleChunks(n);
+  if (hasChunks) {
+    n.chunks.forEach((k) => { if (CHUNKS[k]) S.chunks[k] = true; });
+    saveState();
+  }
 
   // 记账：这一节点涉及的词算"见过"
   (n.words || []).forEach((w) => {
@@ -1510,8 +1622,46 @@ function renderNode() {
   if (n.kind === 'branch') renderBranch(n);
   else if (n.kind === 'choice') renderChoice(n);
   else renderSpeak(n);
-  speak(n.en, false, n.who, nodeAudio('en', false));
+  if (n.narration) {
+    speak(n.narration, false, '旁白').then(() => {
+      if (run && run.idx === myIdx) speak(n.en, false, n.who, nodeAudio('en', false));
+    });
+  } else {
+    speak(n.en, false, n.who, nodeAudio('en', false));
+  }
 }
+
+function renderNarration(n) {
+  const box = $('nodeNarr');
+  if (!n.narration) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  $('narrEn').textContent = n.narration;
+  $('narrZh').textContent = n.narrationZh || '';
+  $('narrZh').classList.add('hidden');
+  $('btnNarrTrans').textContent = '译 翻译';
+}
+
+function toggleChunks(n) {
+  const panel = $('chunkPanel');
+  if (panel.innerHTML) { panel.innerHTML = ''; $('btnChunks').textContent = '✂️ 拆句'; return; }
+  panel.innerHTML = (n.chunks || []).map((k) => {
+    const c = CHUNKS[k];
+    if (!c) return '';
+    return '<div class="chunk">' +
+      '<div class="ck">' + esc(chunkTitle(k)) + '</div>' +
+      '<div class="cz">' + esc(c.zh) + '</div>' +
+      '<div class="cn">' + esc(c.note) + '</div>' +
+      '<div class="cf">' + esc(c.frame) + '</div>' +
+      '<button class="cb" data-chunk="' + esc(k) + '">🔊 听一遍</button>' +
+    '</div>';
+  }).join('');
+  panel.querySelectorAll('[data-chunk]').forEach((b) => {
+    b.onclick = () => speak(b.dataset.chunk, false, null);
+  });
+  $('btnChunks').textContent = '✂️ 收起';
+}
+
+function chunkTitle(k) { return k.charAt(0).toUpperCase() + k.slice(1); }
 
 /* 叙事分支：每个选项都成立，只是把故事引向不同的下一段 */
 function renderBranch(n) {
@@ -1656,12 +1806,35 @@ function stepDown(n, msg) {
   } else if (tries === 2) {
     $('nodeZh').classList.remove('hidden');
     $('btnTrans').textContent = '译 收起翻译';
-    html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p></div>';
+    html += '<p>句型给你搭好了：<br><b>' + n.frame + '</b><br>' + n.frameFill + '</p>' +
+      '<div class="fillrow"><input id="fillIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="先填一个关键词">' +
+      '<button id="btnFill">检查</button></div><div id="fillFb" class="fb"></div></div>';
     $('feedback').innerHTML = html;
+    bindFill(n);
     speak(n.answer, true, n.who, nodeAudio('ans', true));
   } else {
     revealAnswer(n);
   }
+}
+
+function bindFill(n) {
+  const btn = $('btnFill');
+  if (!btn) return;
+  btn.onclick = () => {
+    const v = norm($('fillIn').value);
+    if (!v) return;
+    const hit = (n.accept || []).some((g) => g.some((k) =>
+      v === k || (k.length >= 6 && Math.abs(v.length - k.length) <= 2 && editDistance(v, k) <= 1)));
+    const fb = $('fillFb');
+    if (hit) {
+      btn.disabled = true;
+      fb.className = 'fb ok';
+      fb.textContent = '✓ 对。现在把整句说出来：' + (n.answer || '');
+    } else {
+      fb.className = 'fb no';
+      fb.textContent = '再想想。' + (n.frameFill || '');
+    }
+  };
 }
 
 function revealAnswer(n) {
@@ -1775,6 +1948,108 @@ function finishLevel() {
 }
 
 /* ============================================================
+   8.5 课后听音填空
+   ============================================================ */
+let drill = null;
+const STOPWORDS = new Set(('i am is are the a an my your you me it to for at in on and please thank ' +
+  'yes no here that this we us was were of be do does have has').split(' '));
+
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i].concat(new Array(n).fill(0)));
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+  }
+  return dp[m][n];
+}
+
+function pickBlank(n) {
+  const s = n.answer || '';
+  const low = s.toLowerCase().replace(/[^a-z' ]/g, ' ');
+  let best = '';
+  (n.accept || []).forEach((g) => g.forEach((w) => {
+    if (w.length < 4) return;
+    const re = new RegExp('(^|[^a-z])' + w + '([^a-z]|$)', 'i');
+    if (re.test(low) && w.length > best.length) best = w;
+  }));
+  if (best) return best;
+  s.replace(/[^A-Za-z' ]/g, ' ').split(/\s+/).forEach((w) => {
+    const lw = w.toLowerCase().replace(/'/g, '');
+    if (lw.length >= 4 && !STOPWORDS.has(lw) && lw.length > best.length) best = lw;
+  });
+  return best;
+}
+
+function drillSentence(q) {
+  const re = new RegExp('\\b' + q.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+  return q.sentence.replace(re, '<u></u>');
+}
+
+function startDrill() {
+  const qs = [];
+  L.nodes.forEach((n) => {
+    if (!n.answer) return;
+    const w = pickBlank(n);
+    if (w) qs.push({ sentence: n.answer, word: w });
+  });
+  if (!qs.length) { toast('这一关没有可练的句子'); return; }
+  drill = { qs: qs, idx: 0, done: 0 };
+  renderDrill();
+  show('screenDrill');
+}
+
+function renderDrill() {
+  const q = drill.qs[drill.idx];
+  $('drillMeta').textContent = '第 ' + (drill.idx + 1) + ' / ' + drill.qs.length + ' 题 · 听句子，填出缺的词';
+  $('drillQ').innerHTML = drillSentence(q);
+  $('drillInput').value = '';
+  $('drillFb').textContent = '';
+  $('drillFb').className = 'fb';
+  $('btnDrillNext').classList.add('hidden');
+  $('btnDrillCheck').disabled = false;
+  speak(q.sentence, false, null);
+}
+
+$('btnDrill').onclick = startDrill;
+$('btnDrillPlay').onclick = () => { if (drill) speak(drill.qs[drill.idx].sentence, false, null); };
+$('btnDrillExit').onclick = () => { if (drill) show('screenResult'); };
+$('btnDrillCheck').onclick = () => {
+  if (!drill) return;
+  const q = drill.qs[drill.idx];
+  const v = norm($('drillInput').value);
+  const target = norm(q.word);
+  let ok = v === target;
+  if (!ok && target.length >= 6 && Math.abs(v.length - target.length) <= 2) {
+    ok = editDistance(v, target) <= 1;
+  }
+  if (ok) {
+    drill.done++;
+    $('drillFb').textContent = '✓ 对了：' + q.word;
+    $('drillFb').className = 'fb ok';
+  } else {
+    $('drillFb').textContent = '✗ 正确答案：' + q.word + '（再听一遍）';
+    $('drillFb').className = 'fb no';
+    speak(q.sentence, false, null);
+  }
+  $('btnDrillCheck').disabled = true;
+  $('btnDrillNext').classList.remove('hidden');
+};
+$('btnDrillNext').onclick = () => {
+  if (!drill) return;
+  drill.idx++;
+  if (drill.idx >= drill.qs.length) {
+    toast('巩固完成：' + drill.done + ' / ' + drill.qs.length);
+    show('screenResult');
+    return;
+  }
+  renderDrill();
+};
+
+/* ============================================================
    9. 绑定
    ============================================================ */
 $('btnStart').onclick = () => startLevel(LEVELS[nextLevelIndex()].id);
@@ -1813,6 +2088,12 @@ $('btnLogCopy').onclick = async () => {
     toast('复制失败，请长按上面文字手动选中');
   }
   setTimeout(() => { $('btnLogCopy').textContent = '复制日志'; }, 3000);
+};
+$('btnNarrTrans').onclick = () => {
+  const zh = $('narrZh');
+  const willShow = zh.classList.contains('hidden');
+  zh.classList.toggle('hidden');
+  $('btnNarrTrans').textContent = willShow ? '译 收起' : '译 翻译';
 };
 $('btnHome').onclick = renderHome;
 $('btnDex').onclick = renderDex;
